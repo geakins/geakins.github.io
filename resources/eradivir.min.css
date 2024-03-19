@@ -9,17 +9,6 @@ body{
 article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{
     display:block
 }
-audio,canvas,progress,video{
-    vertical-align:baseline;
-    display:inline-block
-}
-audio:not([controls]){
-    height:0;
-    display:none
-}
-[hidden],template{
-    display:none
-}
 a{
     background-color:transparent
 }
@@ -2672,7 +2661,7 @@ figcaption{
     top:50%;
     bottom:auto;
     left:auto;
-    right:0%;
+    right:3%;
     transform:translateY(-50%)
 }
 .flex{
