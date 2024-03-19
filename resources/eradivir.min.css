@@ -2458,8 +2458,8 @@ figcaption{
 .img.bg{
     height:100%;
     object-fit:cover;
-    border-radius:1.25em;
-    transition:transform .8s;
+    border-radius:2em;
+    transition:transform .7s;
     position:absolute;
     top:0%;
     bottom:0%;
@@ -2622,8 +2622,8 @@ figcaption{
 }
 .abs.abs-qa{
     align-items:center;
-    padding-left:2.5em;
-    padding-right:2.5em;
+    padding-left:4em;
+    padding-right:4em;
     display:flex
 }
 .abs.abs-qa.abs-qa-featured{
