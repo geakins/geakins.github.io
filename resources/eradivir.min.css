@@ -2466,6 +2466,14 @@ figcaption{
     left:0%;
     right:0%
 }
+.img.card{
+	border-radius:2em;
+	position:absolute;
+	right:25%;
+	top:0px;
+	width:80%;
+	height:auto;
+}
 .img.bg.contact{
     margin-left:auto;
     margin-right:auto
@@ -4282,7 +4290,7 @@ figcaption{
     width:30vw
 }
 .list-item-4.list-bullets,.list-item-5,.list-item-6,.list-item-7,.list-item-8{
-    background-image:url(https://assets-global.website-files.com/600be113c4111047016de64a/600be12d2137ed834d86305c_webclip.png);
+    background-image:url(resources/EradivirLogoIcon256.png);
     background-position:0%;
     background-repeat:no-repeat;
     background-size:5%;
