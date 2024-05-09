@@ -3,6 +3,11 @@ namespace Bricks\Integrations\Form;
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
+// WP_List_Table class not included by default: Load it (@since 1.9.8)
+if ( ! class_exists( 'WP_List_Table' ) ) {
+	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
+}
+
 class Submission_Table extends \WP_List_Table {
 	const PAGE_NAME           = 'bricks-form-submissions';
 	const SCREEN_PER_PAGE     = 'bricks_page_form_entries_per_page';

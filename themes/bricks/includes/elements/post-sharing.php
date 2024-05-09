@@ -175,6 +175,8 @@ class Element_Post_Sharing extends Element {
 
 		echo "<ul {$this->render_attributes( '_root' )}>";
 
+		$items_count = count( $items );
+
 		foreach ( $items as $index => $item ) {
 			$service    = ! empty( $item['service'] ) ? $item['service'] : false;
 			$aria_label = '';
@@ -287,7 +289,10 @@ class Element_Post_Sharing extends Element {
 			}
 
 			if ( $data ) {
-				echo "<li data-balloon=\"{$data['tooltip']}\" data-balloon-pos=\"top\">";
+				// Tooltip position to avoid overflow (@since 1.9.8)
+				$tooltip_pos = $index < $items_count / 2 ? 'top-left' : 'top-right';
+
+				echo "<li data-balloon=\"{$data['tooltip']}\" data-balloon-pos=\"$tooltip_pos\">";
 
 				$this->set_attribute( "link-{$index}", 'class', $data['class'] );
 				$this->set_attribute( "link-{$index}", 'href', $data['url'] );

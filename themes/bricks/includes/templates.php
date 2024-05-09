@@ -4,8 +4,7 @@ namespace Bricks;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class Templates {
-	public static $template_images      = [];
-	public static $template_element_ids = [];
+	public static $template_images = [];
 
 	// All template IDs used on requested URL (@since 1.8.1)
 	public static $rendered_template_ids_on_page = [];
@@ -314,7 +313,9 @@ class Templates {
 		 *
 		 * @since 1.8.2
 		 */
-		$global_classes_css = Assets::generate_global_classes();
+
+		// Moved to enqueue_footer_inline_css in frontend.php (@since 1.9.8)
+		// $global_classes_css = Assets::generate_global_classes();
 
 		if ( bricks_is_builder_call() ) {
 			$page_css = Assets::generate_inline_css_page_settings();
@@ -958,6 +959,9 @@ class Templates {
 				break;
 		}
 
+		// STEP: Generate element IDs (@since 1.9.8)
+		$template_elements = Helpers::generate_new_element_ids( $template_elements );
+
 		// Save data
 		update_post_meta( $template_id, $meta_key, $template_elements );
 
@@ -1199,7 +1203,7 @@ class Templates {
 			}
 
 			// STEP: Update global classes in db
-			$global_classes_updated = Helpers::save_global_classes_in_db( $global_classes, 'import_template' );
+			$global_classes_response = Helpers::save_global_classes_in_db( $global_classes );
 
 			// STEP: Save final template elements
 			$elements = Helpers::sanitize_bricks_data( $elements );
@@ -1214,6 +1218,9 @@ class Templates {
 					}
 				}
 			}
+
+			// STEP: Generate element IDs (@since 1.9.8)
+			$elements = Helpers::generate_new_element_ids( $elements );
 
 			update_post_meta( $new_template_id, $meta_key, $elements );
 
@@ -1515,6 +1522,18 @@ class Templates {
 			$template_data['global_classes'] = $global_classes_to_add;
 		}
 
+		// Add all global variables to template data (@since 1.9.8)
+		$global_variables = ! Database::get_setting( 'disableVariablesManager', false ) ? get_option( BRICKS_DB_GLOBAL_VARIABLES, [] ) : [];
+		if ( count( $global_variables ) ) {
+			$template_data['globalVariables'] = $global_variables;
+		}
+
+		// Add all global variables categories to template data (@since 1.9.8)
+		$global_variables_categories = ! Database::get_setting( 'disableVariablesManager', false ) ? get_option( BRICKS_DB_GLOBAL_VARIABLES_CATEGORIES, [] ) : [];
+		if ( count( $global_variables_categories ) ) {
+			$template_data['globalVariablesCategories'] = $global_variables_categories;
+		}
+
 		// Lowercase
 		$file_name = ! empty( $template_data['title'] ) ? strtolower( $template_data['title'] ) : 'no-title';
 
@@ -1738,8 +1757,7 @@ class Templates {
 		$import_images = isset( $_POST['importImages'] ) && $_POST['importImages'] == 'true';
 
 		// Reset template instance data for new template insert
-		self::$template_images      = [];
-		self::$template_element_ids = [];
+		self::$template_images = [];
 
 		/**
 		 * STEP: Convert container-based layout structure (@pre 1.5) to 'section', 'container', 'block' structure (@since 1.5)
@@ -1757,32 +1775,6 @@ class Templates {
 		}
 
 		foreach ( $elements as $index => $element ) {
-			$old_id = ! empty( $element['id'] ) ? $element['id'] : '';
-			$new_id = Helpers::generate_random_id( false );
-
-			// STEP: Generate & set new element ID
-			if ( $old_id ) {
-				self::$template_element_ids[ $old_id ] = $new_id;
-
-				foreach ( Breakpoints::$breakpoints as $bp ) {
-					$breakpoint_key = $bp['key'];
-
-					$custom_css_setting_key = $breakpoint_key === 'desktop' ? '_cssCustom' : "_cssCustom:{$breakpoint_key}";
-
-					// Update custom CSS element ID
-					$custom_css = ! empty( $element['settings'][ $custom_css_setting_key ] ) ? $element['settings'][ $custom_css_setting_key ] : false;
-
-					if ( $custom_css ) {
-						$custom_css = str_replace( $old_id, $new_id, $custom_css );
-
-						// @since 1.4 Use new Bricks class name prefix: 'brxe-'
-						$custom_css = str_replace( "bricks-element-$new_id", "brxe-$new_id", $custom_css );
-
-						$elements[ $index ]['settings'][ $custom_css_setting_key ] = $custom_css;
-					}
-				}
-			}
-
 			if ( empty( $element['settings'] ) ) {
 				$elements[ $index ]['settings'] = [];
 			}
@@ -1812,32 +1804,8 @@ class Templates {
 			$elements = json_decode( $elements_encoded, true );
 		}
 
-		// STEP: Replace old element IDs and 'child' IDs with newly generated ones
-		foreach ( self::$template_element_ids as $old_id => $new_id ) {
-			foreach ( $elements as $index => $element ) {
-				// Replace element ID
-				if ( $element['id'] === $old_id ) {
-					$elements[ $index ]['id'] = $new_id;
-				}
-
-				// STEP: Replace element parent IDs
-				if ( ! empty( $element['parent'] ) && $element['parent'] === $old_id ) {
-					$elements[ $index ]['parent'] = $new_id;
-				} elseif ( isset( $element['parent'] ) && $element['parent'] === '0' ) {
-					// Make sure parentless elements are integer 0 value
-					$elements[ $index ]['parent'] = 0;
-				}
-
-				// STEP: Replace element children IDs
-				if ( isset( $element['children'] ) && is_array( $element['children'] ) ) {
-					foreach ( $element['children'] as $child_index => $child_id ) {
-						if ( $child_id === $old_id ) {
-							$elements[ $index ]['children'][ $child_index ] = $new_id;
-						}
-					}
-				}
-			}
-		}
+		// STEP: Generate new element IDs (@since 1.x)
+		$elements = Helpers::generate_new_element_ids( $elements );
 
 		wp_send_json_success( [ 'elements' => $elements ] );
 	}

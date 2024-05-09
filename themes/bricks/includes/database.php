@@ -230,7 +230,41 @@ class Database {
 
 						foreach ( $query_vars as $key => $value ) {
 							if ( in_array( $key, Query::archive_query_arguments() ) ) {
+								// Merge existing tax_query with Bricks tax_query (@since 1.9.8)
+								if ( $key === 'tax_query' ) {
+									$current_tax_query = $query->get( 'tax_query' );
+									if ( ! empty( $current_tax_query ) ) {
+										$value = Query::merge_tax_or_meta_query_vars( $current_tax_query, $value, 'tax' );
+									}
+								}
 								$query->set( $key, $value );
+							}
+						}
+
+						/**
+						 * Handle random seed
+						 *
+						 * Generate random seed statement and add to posts_orderby filter and target the main query
+						 *
+						 * @since 1.9.8
+						 */
+						if ( Query::use_random_seed( $query_vars ) ) {
+							$random_seed_statement = Query::get_random_seed_statement( $element_id, $query_vars );
+
+							if ( ! empty( $random_seed_statement ) ) {
+								add_filter(
+									'posts_orderby',
+									function( $orderby, $query ) use ( $random_seed_statement ) {
+										// Exit if it's not main query
+										if ( bricks_is_builder() || is_admin() || ! $query->is_main_query() ) {
+											return $orderby;
+										}
+
+										return $random_seed_statement;
+									},
+									10,
+									2
+								);
 							}
 						}
 
@@ -1004,7 +1038,14 @@ class Database {
 			self::$global_data['globalClasses'] = get_option( BRICKS_DB_GLOBAL_CLASSES, [] );
 		}
 
-		// Builder: Global classes locked (@since 1.4)
+		// Global classes categories
+		if ( is_multisite() && BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES_CATEGORIES ) {
+			self::$global_data['globalClassesCategories'] = get_blog_option( get_main_site_id(), BRICKS_DB_GLOBAL_CLASSES_CATEGORIES, [] );
+		} else {
+			self::$global_data['globalClassesCategories'] = get_option( BRICKS_DB_GLOBAL_CLASSES_CATEGORIES, [] );
+		}
+
+		// Builder: Global classes locked
 		if ( bricks_is_builder() ) {
 			if ( is_multisite() && BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES ) {
 				self::$global_data['globalClassesLocked'] = get_blog_option( get_main_site_id(), BRICKS_DB_GLOBAL_CLASSES_LOCKED, [] );
@@ -1013,11 +1054,26 @@ class Database {
 			}
 		}
 
-		// Global classes categories (@since 1.9.5)
-		if ( is_multisite() && BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES_CATEGORIES ) {
-			self::$global_data['globalClassesCategories'] = get_blog_option( get_main_site_id(), BRICKS_DB_GLOBAL_CLASSES_CATEGORIES, [] );
-		} else {
-			self::$global_data['globalClassesCategories'] = get_option( BRICKS_DB_GLOBAL_CLASSES_CATEGORIES, [] );
+		// Builder: Global classes timestamp (@since 1.x)
+		if ( bricks_is_builder() ) {
+			if ( is_multisite() && BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES ) {
+				self::$global_data['globalClassesTimestamp'] = get_blog_option( get_main_site_id(), BRICKS_DB_GLOBAL_CLASSES_TIMESTAMP, [] );
+			} else {
+				self::$global_data['globalClassesTimestamp'] = get_option( BRICKS_DB_GLOBAL_CLASSES_TIMESTAMP, [] );
+			}
+		}
+
+		// Builder: Global classes user_id (@since 1.x)
+		if ( bricks_is_builder() ) {
+			if ( is_multisite() && BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES ) {
+				self::$global_data['globalClassesUser'] = get_blog_option( get_main_site_id(), BRICKS_DB_GLOBAL_CLASSES_USER, [] );
+			} else {
+				self::$global_data['globalClassesUser'] = get_option( BRICKS_DB_GLOBAL_CLASSES_USER, [] );
+			}
+
+			if ( ! empty( self::$global_data['globalClassesUser'] ) ) {
+				self::$global_data['globalClassesUser'] = get_userdata( self::$global_data['globalClassesUser'] )->display_name ?? '';
+			}
 		}
 
 		$default_pseudo_classes = [
@@ -1049,6 +1105,22 @@ class Database {
 
 		// Set global gettings
 		self::$global_settings = self::$global_data['settings'];
+
+		// Global variables, if not disable in Bricks settings (since 1.9.8)
+		if ( ! isset( self::$global_settings['disableVariablesManager'] ) ) {
+			if ( is_multisite() && BRICKS_MULTISITE_USE_MAIN_SITE_VARIABLES_CATEGORIES ) {
+				self::$global_data['globalVariables'] = get_blog_option( get_main_site_id(), BRICKS_DB_GLOBAL_VARIABLES, [] );
+			} else {
+				self::$global_data['globalVariables'] = get_option( BRICKS_DB_GLOBAL_VARIABLES, [] );
+			}
+		}
+
+		// Global variables categories (since 1.9.8)
+		if ( is_multisite() && BRICKS_MULTISITE_USE_MAIN_SITE_VARIABLES_CATEGORIES ) {
+			self::$global_data['globalVariablesCategories'] = get_blog_option( get_main_site_id(), BRICKS_DB_GLOBAL_VARIABLES_CATEGORIES, [] );
+		} else {
+			self::$global_data['globalVariablesCategories'] = get_option( BRICKS_DB_GLOBAL_VARIABLES_CATEGORIES, [] );
+		}
 
 		// Adobe fonts: If project ID set (@since 1.7.1)
 		if ( ! empty( self::$global_settings['adobeFontsProjectId'] ) ) {

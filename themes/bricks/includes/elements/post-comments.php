@@ -569,16 +569,28 @@ class Element_Post_Comments extends Element {
 				$required_attribute  = $required_name_email ? ' required' : '';
 				$required_star       = $required_name_email ? ' *' : '';
 
-				$field_keys = $settings['fieldKeys'] ?? [ 'author', 'email', 'url' ];
-				$field_keys = is_string( $field_keys ) ? [ $field_keys ] : $field_keys;
-				$field_keys = apply_filters( 'comment_form_default_fields', $field_keys );
+				$fields = [
+					'author' => '',
+					'email'  => '',
+					'url'    => '',
+				];
 
-				$fields = [];
+				// Field keys: WP filter
+				$fields = apply_filters( 'comment_form_default_fields', $fields );
 
-				foreach ( $field_keys as $field ) {
+				// Field keys: Bricks settings
+				if ( isset( $settings['fieldKeys'] ) && is_array( $settings['fieldKeys'] ) ) {
+					$fields = [];
+
+					foreach ( $settings['fieldKeys'] as $keys ) {
+						$fields[ $keys ] = '';
+					}
+				}
+
+				foreach ( $fields as $key => $field_html ) {
 					$field_html = '<div class="form-group">';
 
-					switch ( $field ) {
+					switch ( $key ) {
 						case 'author':
 							if ( isset( $settings['label'] ) ) {
 								$field_html .= '<label for="author">' . esc_html_x( 'Name', 'Author name', 'bricks' ) . $required_star . '</label>';
@@ -607,8 +619,9 @@ class Element_Post_Comments extends Element {
 							break;
 					}
 
-					$field_html      .= '</div>';
-					$fields[ $field ] = $field_html;
+					$field_html .= '</div>';
+
+					$fields[ $key ] = $field_html;
 				}
 
 				if ( isset( $settings['label'] ) ) {

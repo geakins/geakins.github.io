@@ -155,6 +155,18 @@ class Init {
 			$turnstile_response   = isset( $_POST['cf-turnstile-response'] ) ? sanitize_text_field( $_POST['cf-turnstile-response'] ) : false;
 			$turnstile_data       = [];
 
+			// Return error: Secret key set, but no response (@since 1.9.8)
+			if ( $turnstile_secret_key && ! $turnstile_response ) {
+				wp_send_json_error(
+					[
+						'code'    => 400,
+						'action'  => '',
+						'type'    => 'error',
+						'message' => 'Turnstile: ' . esc_html__( 'Validation failed', 'bricks' ),
+					]
+				);
+			}
+
 			if ( $turnstile_secret_key && $turnstile_response ) {
 				$url  = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 				$args = [

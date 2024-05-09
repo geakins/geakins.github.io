@@ -3,6 +3,7 @@ namespace Bricks\Integrations\Form;
 
 use Bricks\Helpers;
 use Bricks\Database;
+use Bricks\Templates;
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
@@ -507,8 +508,12 @@ class Submission_Database {
 		$global_id     = $global_id ? $global_id : $form_id;
 		$form_settings = Helpers::get_element_settings( $post_id, $form_id, $global_id );
 
+		/**
+		 * Get form settings from the $post_id via Database class
+		 *
+		 * Global element was handled in Helpers::get_element_settings(), so no need to check again.
+		 */
 		if ( ! $form_settings ) {
-			// Try to get the form settings from the Database class
 			$bricks_data = Database::get_data( $post_id );
 
 			if ( ! empty( $bricks_data ) ) {
@@ -524,6 +529,65 @@ class Submission_Database {
 					$form          = array_values( $form );
 					$form          = $form[0];
 					$form_settings = $form['settings'];
+				}
+			}
+		}
+
+		/**
+		 * Helpers::get_element_settings unable to retrieve the form settings if located in header/footer template
+		 *
+		 * It relies on Database::$active_templates which is empty in the admin area.
+		 *
+		 * - Use Meta query + Templates::get_templates() to get the form settings
+		 * - Global element was handled in Helpers::get_element_settings(), so no need to check again
+		 *
+		 * @since 1.9.8
+		 */
+		if ( ! $form_settings ) {
+			// Can use s:2:"id";s:6:"coudkb";s:4:"name";s:4:"form" but afraid plugin changed the sequence
+			$key         = 'id";s:6:"' . $form_id;
+			$meta_querys = [
+				'relation' => 'OR',
+				[
+					'key'     => BRICKS_DB_PAGE_HEADER,
+					'value'   => $key,
+					'compare' => 'LIKE',
+				],
+				[
+					'key'     => BRICKS_DB_PAGE_FOOTER,
+					'value'   => $key,
+					'compare' => 'LIKE',
+				],
+			];
+
+			$templates = Templates::get_templates(
+				[
+					'post_status'    => 'any',
+					'posts_per_page' => 1,
+					'meta_query'     => $meta_querys,
+				]
+			);
+
+			if ( ! empty( $templates ) ) {
+				// Get the first template ID (Should be only one as it is unique)
+				$template_data = $templates[0];
+				$template_type = isset( $template_data['type'] ) ? $template_data['type'] : 'content';
+				$bricks_data   = isset( $template_data[ $template_type ] ) ? $template_data[ $template_type ] : [];
+
+				if ( ! empty( $bricks_data ) ) {
+					// Search which array's ID matches the form ID
+					$form = array_filter(
+						$bricks_data,
+						function( $data ) use ( $form_id ) {
+							return $data['id'] === $form_id;
+						}
+					);
+
+					if ( ! empty( $form ) ) {
+						$form          = array_values( $form );
+						$form          = $form[0];
+						$form_settings = $form['settings'];
+					}
 				}
 			}
 		}

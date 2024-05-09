@@ -552,7 +552,7 @@ class Helpers {
 	 * @param string  $more
 	 * @param boolean $keep_html
 	 */
-	public static function trim_words( $text, $length, $more = null, $keep_html = false ) {
+	public static function trim_words( $text, $length, $more = null, $keep_html = false, $wpautop = true ) {
 		if ( empty( $text ) ) {
 			return '';
 		}
@@ -570,7 +570,12 @@ class Helpers {
 		 * @since 1.6
 		 */
 		if ( $keep_html ) {
-			$text = force_balance_tags( html_entity_decode( wp_trim_words( htmlentities( wpautop( $text ) ), $length, $more ) ) );
+			// False for Rich & basic text element (@since 1.9.8)
+			if ( $wpautop ) {
+				$text = wpautop( $text );
+			}
+
+			$text = force_balance_tags( html_entity_decode( wp_trim_words( htmlentities( $text ), $length, $more ) ) );
 		} else {
 			$text = wp_trim_words( $text, $length, $more );
 		}
@@ -663,7 +668,8 @@ class Helpers {
 						$css_value .= 'px';
 					}
 
-					$style .= "$css_property: $css_value;";
+					// Add !important to supercede other !important styles (#86bycnj5j)
+					$style .= "$css_property: $css_value !important;";
 				}
 			}
 		}
@@ -1103,6 +1109,40 @@ class Helpers {
 	}
 
 	/**
+	 * Generate new & unique IDs for Bricks elements
+	 *
+	 * @since 1.9.8
+	 */
+	public static function generate_new_element_ids( $elements = [] ) {
+		if ( empty( $elements ) ) {
+			return $elements;
+		}
+
+		// STEP: Parse the entire Bricks data postmeta as a string
+		$bricks_data_string = wp_json_encode( $elements );
+
+		$ids_lookup = [];
+
+		// STEP: Loop over all elements to store old and new element ID in $ids_lookup array
+		foreach ( $elements as $element ) {
+			$old_id = $element['id'] ?? '';
+			$new_id = self::generate_random_id( false );
+
+			if ( $old_id && $new_id ) {
+				$ids_lookup[ $old_id ] = $new_id;
+			}
+		}
+
+		// STEP: Search for old element ID in the Bricks data string and replace with newly-generated element ID
+		$new_elements_string = str_replace( array_keys( $ids_lookup ), array_values( $ids_lookup ), $bricks_data_string );
+
+		// STEP: Convert Bricks data string back to array, and use as new Bricks data
+		$new_elements = json_decode( $new_elements_string, true );
+
+		return $new_elements;
+	}
+
+	/**
 	 * Get file contents from file system
 	 *
 	 * .svg, .json (Google fonts), etc.
@@ -1293,23 +1333,6 @@ class Helpers {
 	}
 
 	/**
-	 * Code signatures are enabled (= default)
-	 *
-	 * Can only be disabled via 'bricks/code/disable_signatures' filter.
-	 * NOTE: Only use filter if you encounter issues with code signatures on your site!
-	 *
-	 * @since 1.9.7
-	 */
-	public static function code_signatures_enabled() {
-		$disabled = apply_filters( 'bricks/code/disable_signatures', false );
-		if ( $disabled === true ) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
 	 * Verifies the integrity of the data using a hash
 	 *
 	 * @param string $hash The hash to compare against.
@@ -1320,11 +1343,6 @@ class Helpers {
 	 * @return bool True if the data is valid, false otherwise.
 	 */
 	public static function verify_code_signature( $hash, $data ) {
-		// Return true: Code signature verification disabled via filter
-		if ( ! self::code_signatures_enabled() ) {
-			return true;
-		}
-
 		// Compute the hash of the data
 		$computed_hash = wp_hash( $data );
 
@@ -1679,6 +1697,28 @@ class Helpers {
 			return $old_elements;
 		}
 
+		/**
+		 * Current user has no full access nor 'unfiltered_html' capability
+		 *
+		 * Run all non-code elements through wp_filter_post_kses as WordPress does.
+		 *
+		 * @since 1.9.8
+		 */
+		if ( ! $user_has_full_access && ! current_user_can( 'unfiltered_html' ) ) {
+			foreach ( $new_elements as $i => $new_element ) {
+				if ( $new_element['name'] !== 'code' ) {
+					// Run $element as a string through wp_filter_post_kses (expected to be escaped with slashes) to remove any disallowed HTML tags
+					$new_element_string = wp_json_encode( $new_element );
+					$new_element_string = wp_filter_post_kses( wp_slash( $new_element_string ) );
+					$new_element        = Ajax::decode( $new_element_string, false );
+				}
+
+				if ( isset( $new_element['id'] ) ) {
+					$new_elements[ $i ] = $new_element;
+				}
+			}
+		}
+
 		$old_elements_indexed = [];
 
 		// Index the old elements for faster check
@@ -1811,8 +1851,10 @@ class Helpers {
 	 * @param array  $global_classes
 	 * @param string $action
 	 */
-	public static function save_global_classes_in_db( $global_classes, $action ) {
-		$response = '';
+	public static function save_global_classes_in_db( $global_classes ) {
+		$response  = '';
+		$timestamp = time();
+		$user_id   = get_current_user_id();
 
 		// Update global classes (if not empty)
 		if ( is_array( $global_classes ) && count( $global_classes ) ) {
@@ -1821,7 +1863,34 @@ class Helpers {
 
 			if ( count( $global_classes ) ) {
 				$response = update_option( BRICKS_DB_GLOBAL_CLASSES, $global_classes );
+
+				// Update global classes timestamp & user_id for PopupConflict.vue (@since 1.x)
+				// NOTE: Not yet in use.
+				// update_option( BRICKS_DB_GLOBAL_CLASSES_TIMESTAMP, $timestamp );
+				// update_option( BRICKS_DB_GLOBAL_CLASSES_USER, $user_id );
 			}
+		}
+
+		return [
+			'response'  => $response,
+			'timestamp' => $timestamp,
+			'user_id'   => $user_id,
+		];
+	}
+
+	/**
+	 * Save global variables in options table
+	 *
+	 * @param array $global_variables
+	 * @return mixed
+	 * @since 1.9.8
+	 */
+	public static function save_global_variables_in_db( $global_variables ) {
+		$response = '';
+
+		// Update global variables (if not empty)
+		if ( is_array( $global_variables ) && count( $global_variables ) ) {
+			$response = update_option( BRICKS_DB_GLOBAL_VARIABLES, $global_variables );
 		}
 
 		return $response;
@@ -2303,7 +2372,7 @@ class Helpers {
 
 	/**
 	 * Populate query vars if the element is not using query type controls
-	 * Currently used in related-posts element and query_results_count when targetting related-posts element
+	 * Currently used in related-posts element and query_results_count when targeting related-posts element
 	 *
 	 * @return array
 	 * @since 1.9.3

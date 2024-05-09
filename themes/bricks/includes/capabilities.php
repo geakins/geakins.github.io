@@ -486,6 +486,11 @@ class Capabilities {
 	 * - bricks_cap_bypass_maintenance (@since 1.9.4)
 	 */
 	public function update_user_profile( $user_id ) {
+		// Exit if the current user does not have manage_options capability
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		$user = get_user_by( 'ID', $user_id );
 
 		// Set builder access capability
@@ -523,6 +528,11 @@ class Capabilities {
 	}
 
 	public function user_profile( $user ) {
+		// Exit if the current user does not have manage_options capability
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		$role_can = array_keys( $user->allcaps );
 		$user_can = array_keys( $user->caps );
 

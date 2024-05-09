@@ -16,6 +16,14 @@ class Filter_Checkbox extends Filter_Element {
 		$filter_controls = $this->get_filter_controls();
 
 		if ( ! empty( $filter_controls ) ) {
+			// fieldCompareOperator only support 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN'
+			$filter_controls['fieldCompareOperator']['options'] = [
+				'IN'          => 'IN',
+				'NOT IN'      => 'NOT IN',
+				'BETWEEN'     => 'BETWEEN',
+				'NOT BETWEEN' => 'NOT BETWEEN',
+			];
+
 			$this->controls = array_merge( $this->controls, $filter_controls );
 		}
 	}

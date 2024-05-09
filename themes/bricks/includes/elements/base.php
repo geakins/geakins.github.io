@@ -981,8 +981,8 @@ abstract class Element {
 					],
 				],
 				'inline'         => true,
-				'small'          => true,
 				'hasDynamicData' => false,
+				'hasVariables'   => true,
 				'placeholder'    => 'auto',
 			];
 		}
@@ -1309,14 +1309,16 @@ abstract class Element {
 		];
 
 		$this->controls['_cssCustom'] = [
-			'tab'         => 'style',
-			'group'       => '_css',
-			'label'       => esc_html__( 'Custom CSS', 'bricks' ),
-			'type'        => 'code',
-			'pasteStyles' => true,
-			'css'         => [], // NOTE: Undocumented (@since 1.5.1) return true instead of array with 'property' and 'selector' data to output as plain CSS
-			'description' => esc_html__( 'Use "%root%" to target the element wrapper.', 'bricks' ) . ' ' . esc_html__( 'Add "%root%" via keyboard shortcut "r + TAB".', 'bricks' ),
-			'placeholder' => "%root% {\n  color: firebrick;\n}",
+			'tab'          => 'style',
+			'group'        => '_css',
+			'label'        => esc_html__( 'Custom CSS', 'bricks' ),
+			'type'         => 'code',
+			'mode'         => 'css',
+			'hasVariables' => true,
+			'pasteStyles'  => true,
+			'css'          => [], // NOTE: Undocumented (@since 1.5.1) return true instead of array with 'property' and 'selector' data to output as plain CSS
+			'description'  => esc_html__( 'Use "%root%" to target the element wrapper.', 'bricks' ) . ' ' . esc_html__( 'Add "%root%" via keyboard shortcut "r + TAB".', 'bricks' ),
+			'placeholder'  => "%root% {\n  color: firebrick;\n}",
 		];
 
 		$this->controls['_cssClasses'] = [
@@ -1688,8 +1690,10 @@ abstract class Element {
 		 * @since 1.5.1
 		 *
 		 * @since 1.8 'nav-nested'
+		 *
+		 * @since 1.9.8 'pagination', frontend AJAX need to use ID to identify the correct DOM when replacement (#86bxet3c3)
 		 */
-		if ( in_array( $this->name, [ 'nav-menu', 'nav-nested' ] ) ) {
+		if ( in_array( $this->name, [ 'nav-menu', 'nav-nested', 'pagination' ] ) ) {
 			return true;
 		}
 
@@ -2115,8 +2119,22 @@ abstract class Element {
 					$value = join( ' ', $value );
 				}
 
-				// Escape HTML attribute value according to its type
-				$value = filter_var( $value, FILTER_VALIDATE_URL ) ? esc_url( $value ) : esc_attr( $value );
+				// STEP: Escape HTML attribute value according to its type
+
+				// File URL
+				if ( is_string( $value ) && strpos( $value, 'file:' ) === 0 ) {
+					$value = htmlspecialchars( $value );
+				}
+
+				// URL
+				elseif ( filter_var( $value, FILTER_VALIDATE_URL ) ) {
+					$value = esc_url( $value );
+				}
+
+				// HTML
+				else {
+					$value = esc_attr( $value );
+				}
 
 				$attribute_strings[] = "$key=\"$value\"";
 			}
@@ -3522,7 +3540,10 @@ abstract class Element {
 		}
 
 		if ( $render ) {
-			echo "<div {$this->render_attributes( 'trail' )}></div>";
+			// Use the tag of the element instead of a hardcoded div (@since 1.9.8)
+			$tag = $this->get_tag();
+
+			echo "<$tag {$this->render_attributes( 'trail' )}></$tag>";
 		}
 	}
 

@@ -25,11 +25,16 @@ class Query_Filters {
 		if ( Helpers::enabled_query_filters() ) {
 			add_action( 'wp', [ $this, 'maybe_set_page_filters' ], 100 );
 
-			// Capture filter elements and index if needed
-			add_action( 'update_post_meta', [ $this, 'maybe_update_element' ], 10, 4 );
+			/**
+			 * Capture filter elements and index if needed
+			 * Use update_post_metadata to capture filter elements when duplicate content.
+			 * Priority 11 after the hook check in ajax.php
+			 *
+			 * @since 1.9.8
+			 */
+			add_action( 'update_post_metadata', [ $this, 'maybe_update_element' ], 11, 5 );
 
-			/** Hooks to listen so we can add new index record. Use largest priority */
-			// Post
+			// Hooks to listen so we can add new index record. Use largest priority
 			add_action( 'save_post', [ $this, 'save_post' ], PHP_INT_MAX - 10, 2 );
 			add_action( 'delete_post', [ $this, 'delete_post' ] );
 			add_filter( 'wp_insert_post_parent', [ $this, 'wp_insert_post_parent' ], 10, 4 );
@@ -38,6 +43,9 @@ class Query_Filters {
 			// Term
 			add_action( 'edited_term', [ $this, 'edited_term' ], PHP_INT_MAX - 10, 3 );
 			add_action( 'delete_term', [ $this, 'delete_term' ], 10, 4 );
+
+			// Element conditions all true for filter elements in filter API endpoints (@since 1.9.8)
+			add_filter( 'bricks/element/render', [ $this, 'filter_element_render' ], 10, 2 );
 		}
 	}
 
@@ -210,6 +218,7 @@ class Query_Filters {
 			'filter-search',
 			'filter-select',
 			'filter-range',
+			'pagination', // @since 1.9.8
 		];
 	}
 
@@ -225,6 +234,33 @@ class Query_Filters {
 			'filter-select',
 			'filter-range',
 		];
+	}
+
+	/**
+	 * Force render filter elements in filter API endpoint.
+	 *
+	 * Otherwise, filter elements will not be re-rendered in filter API endpoint as element condition fails.
+	 *
+	 * @since 1.9.8
+	 */
+	public function filter_element_render( $render, $element_instance ) {
+		$element_name = is_object( $element_instance ) ? $element_instance->name : false;
+
+		if ( ! $element_name ) {
+			$element_name = $element_instance['name'] ?? false;
+		}
+
+		// Check: Is this a filter element
+		if ( ! in_array( $element_name, self::supported_element_names(), true ) ) {
+			return $render;
+		}
+
+		// Return true for filter elements (if this is filter API endpoint)
+		if ( Api::is_current_endpoint( 'query_result' ) ) {
+			return true;
+		}
+
+		return $render;
 	}
 
 	/**
@@ -249,12 +285,17 @@ class Query_Filters {
 	}
 
 	/**
-	 * Hook into update_post_meta, if filter element found, update the index table
+	 * Hook into update_post_metadata, if filter element found, update the index table
 	 */
-	public function maybe_update_element( $meta_id, $object_id, $meta_key, $meta_value ) {
+	public function maybe_update_element( $check, $object_id, $meta_key, $meta_value, $prev_value ) {
+		// Exclude revisions
+		if ( wp_is_post_revision( $object_id ) ) {
+			return $check;
+		}
+
 		// Only listen to header, content, footer
 		if ( ! in_array( $meta_key, [ BRICKS_DB_PAGE_HEADER, BRICKS_DB_PAGE_CONTENT, BRICKS_DB_PAGE_FOOTER ], true ) ) {
-			return;
+			return $check;
 		}
 
 		$filter_elements = [];
@@ -280,6 +321,8 @@ class Query_Filters {
 
 		// Now we need to update the index table by using the updated_data
 		$this->update_index_table( $updated_data );
+
+		return $check;
 	}
 
 	/**
@@ -308,7 +351,7 @@ class Query_Filters {
 		foreach ( $all_db_elements_ids as $key => $db_element_id ) {
 			// If this element is not in the new elements, delete it
 			if ( ! isset( $elements[ $db_element_id ] ) ) {
-				$this->delete_element( $db_element_id );
+				$this->delete_element( [ 'filter_id' => $db_element_id ] );
 				$update_data['deleted_elements'][] = $all_db_elements[ $key ];
 			}
 		}
@@ -722,16 +765,25 @@ class Query_Filters {
 	/**
 	 * Delete element from element table
 	 */
-	private function delete_element( $element_id ) {
+	private function delete_element( $args = [] ) {
+		if ( empty( $args ) ) {
+			return;
+		}
+
 		global $wpdb;
 
 		$table_name = self::get_table_name( 'element' );
 
+		// Check if array_keys is filter_id or post_id
+		$column = array_keys( $args )[0];
+
+		if ( ! in_array( $column, [ 'filter_id', 'post_id' ], true ) ) {
+			return;
+		}
+
 		$wpdb->delete(
 			$table_name,
-			[
-				'filter_id' => $element_id,
-			]
+			$args
 		);
 	}
 
@@ -933,7 +985,7 @@ class Query_Filters {
 	/**
 	 * Updated filters to be used in frontend after each filter ajax request
 	 */
-	public static function get_updated_filters( $filters = [], $post_id = 0, $query = null ) {
+	public static function get_updated_filters( $filters = [], $post_id = 0 ) {
 		$updated_filters = [];
 
 		// Loop through all filter_ids and gather elements that need to be updated
@@ -1134,6 +1186,27 @@ class Query_Filters {
 				'object_type' => 'post',
 			]
 		);
+
+		/**
+		 * Maybe this post contains filter elements
+		 *
+		 * Must remove filter elements from element table, and related rows from index table.
+		 *
+		 * @since 1.9.8
+		 */
+		// STEP: Get all filter elements from this post_id
+		$all_db_elements = $this->get_elements_from_element_table( [ 'post_id' => $post_id ] );
+
+		// Just get the filter_id
+		$all_db_elements_ids = array_column( $all_db_elements, 'filter_id' );
+
+		// STEP: Remove rows related to these filter_ids
+		foreach ( $all_db_elements_ids as $filter_id ) {
+			self::remove_index_rows( [ 'filter_id' => $filter_id ] );
+		}
+
+		// Remove elements related to this post_id
+		$this->delete_element( [ 'post_id' => $post_id ] );
 	}
 
 	/**

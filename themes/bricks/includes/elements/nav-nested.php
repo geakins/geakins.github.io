@@ -366,7 +366,7 @@ class Element_Nav_Nested extends Element {
 		$this->controls['iconTransform'] = [
 			'group'  => 'dropdown',
 			'type'   => 'transform',
-			'label'  => esc_html__( 'icon transform', 'bricks' ),
+			'label'  => esc_html__( 'Icon transform', 'bricks' ),
 			'inline' => true,
 			'small'  => true,
 			'css'    => [

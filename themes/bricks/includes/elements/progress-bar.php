@@ -17,8 +17,7 @@ class Element_Progress_Bar extends Element {
 	public function set_controls() {
 		$this->controls['_padding']['css'][0]['selector'] = '';
 
-		// Group: 'bars'
-
+		// Group: Bars
 		$this->controls['bars'] = [
 			'tab'         => 'content',
 			'type'        => 'repeater',
@@ -179,19 +178,19 @@ class Element_Progress_Bar extends Element {
 
 			echo '<div class="bar-wrapper">';
 
-			echo '<label>';
+			$label = '';
 
-			$title = isset( $bar['title'] ) ? $this->render_dynamic_data( $bar['title'] ) : null;
-
-			if ( $title ) {
-				echo '<span class="label">' . $title . '</span>';
+			if ( isset( $bar['title'] ) ) {
+				$label .= '<span class="label">' . $this->render_dynamic_data( $bar['title'] ) . '</span>';
 			}
 
 			if ( isset( $this->settings['showPercentage'] ) ) {
-				echo '<span class="percentage">' . $percentage . '%</span>';
+				$label .= '<span class="percentage">' . $percentage . '%</span>';
 			}
 
-			echo '</label>';
+			if ( $label ) {
+				echo "<label>$label</label>";
+			}
 
 			echo '<div class="bar"><span ' . $this->render_attributes( "bar-inner-{$index}" ) . '></span></div>';
 

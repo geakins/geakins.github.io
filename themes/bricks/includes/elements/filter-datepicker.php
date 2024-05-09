@@ -66,6 +66,25 @@ class Filter_DatePicker extends Filter_Element {
 				]
 			];
 
+			/**
+			 * Date format
+			 *
+			 * Different custom field has different way to save value
+			 *
+			 * @since 1.9.8
+			 */
+			$filter_controls['dateFormat'] = [
+				'label'          => esc_html__( 'Date format', 'bricks' ),
+				'type'           => 'text',
+				'inline'         => true,
+				'hasDynamicData' => false,
+				'placeholder'    => get_option( 'date_format' ),
+				'description'    => esc_html__( 'Must match with the format saved in database.', 'bricks' ) . ' ' . esc_html__( 'ACF Date picker, for example, uses Ymd.', 'bricks' ),
+				'required'       => [
+					[ 'filterSource', '!=', '' ],
+				]
+			];
+
 			$filter_controls['useMinMax'] = [
 				'label'       => esc_html__( 'Min/max date', 'bricks' ),
 				'type'        => 'checkbox',
@@ -244,7 +263,7 @@ class Filter_DatePicker extends Filter_Element {
 
 	public function render() {
 		$settings         = $this->settings;
-		$placeholder      = $settings['placeholder'] ?? esc_html__( 'Date', 'bricks' );
+		$placeholder      = ! empty( $settings['placeholder'] ) ? $this->render_dynamic_data( $settings['placeholder'] ) : esc_html__( 'Date', 'bricks' );
 		$this->input_name = $settings['name'] ?? "form-field-{$this->id}";
 
 		if ( $this->is_filter_input() ) {
@@ -264,8 +283,14 @@ class Filter_DatePicker extends Filter_Element {
 		$time_24h = get_option( 'time_format' );
 		$time_24h = strpos( $time_24h, 'H' ) !== false || strpos( $time_24h, 'G' ) !== false;
 
-		$date_format = isset( $settings['enableTime'] ) ? get_option( 'date_format' ) . ' H:i' : get_option( 'date_format' );
-		$mode        = isset( $settings['isDateRange'] ) ? 'range' : 'single';
+		// User defined date format (@since 1.9.8)
+		$date_format = $settings['dateFormat'] ?? get_option( 'date_format' );
+
+		if ( isset( $settings['enableTime'] ) ) {
+			$date_format .= ' H:i';
+		}
+
+		$mode = isset( $settings['isDateRange'] ) ? 'range' : 'single';
 
 		$datepicker_options = [
 			'enableTime' => isset( $settings['enableTime'] ),

@@ -511,6 +511,7 @@ class Settings_Page extends Settings_Base {
 		$this->controls['customScriptsHeader'] = [
 			'group'       => 'custom-code',
 			'type'        => 'code',
+			'mode'        => 'php',
 			'label'       => esc_html__( 'Header scripts', 'bricks' ),
 			// translators: %s: </head>
 			'description' => sprintf( esc_html__( 'Adds scripts right before closing %s tag.', 'bricks' ), htmlspecialchars( '</head>' ) ),
@@ -519,6 +520,7 @@ class Settings_Page extends Settings_Base {
 		$this->controls['customScriptsBodyHeader'] = [
 			'group'       => 'custom-code',
 			'type'        => 'code',
+			'mode'        => 'php',
 			'label'       => esc_html__( 'Body (header) scripts', 'bricks' ),
 			// translators: %s: <body>
 			'description' => sprintf( esc_html__( 'Adds scripts right after opening %s tag.', 'bricks' ), htmlspecialchars( '<body>' ) ),
@@ -527,6 +529,7 @@ class Settings_Page extends Settings_Base {
 		$this->controls['customScriptsBodyFooter'] = [
 			'group'       => 'custom-code',
 			'type'        => 'code',
+			'mode'        => 'php',
 			'label'       => esc_html__( 'Body (footer) scripts', 'bricks' ),
 			// translators: %s: </body>
 			'description' => sprintf( esc_html__( 'Adds scripts right before closing %s tag.', 'bricks' ), htmlspecialchars( '</body>' ) ),

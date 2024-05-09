@@ -23,6 +23,7 @@ class Element_Posts extends Element {
 		// Load IsotopeJS
 		if ( isset( $this->settings['filter'] ) || $layout === 'masonry' ) {
 			wp_enqueue_script( 'bricks-isotope' );
+			wp_enqueue_script( 'bricks-imagesloaded' );
 			wp_enqueue_style( 'bricks-isotope' );
 		}
 	}
@@ -127,6 +128,35 @@ class Element_Posts extends Element {
 			'rerender'    => true,
 			'placeholder' => 2,
 			'required'    => [ 'layout', '!=', [ 'list', 'metro' ] ],
+		];
+
+		$this->controls['columnsMetro'] = [
+			'tab'         => 'content',
+			'group'       => 'layout',
+			'label'       => esc_html__( 'Columns', 'bricks' ) . ' (' . esc_html__( 'Metro', 'bricks' ) . ')',
+			'type'        => 'number',
+			'min'         => 1,
+			'css'         => [
+				[
+					'selector' => '.bricks-layout-wrapper',
+					'property' => 'grid-template-columns',
+					'value'    => 'repeat(%s, 1fr)',
+				],
+				[
+					'selector' => '.bricks-layout-item',
+					'property' => 'grid-column',
+					'value'    => 'unset',
+				],
+				[
+					'selector' => '.bricks-layout-item',
+					'property' => 'grid-row',
+					'value'    => 'unset',
+				],
+			],
+			'placeholder' => 3,
+			'rerender'    => true,
+			'desc'        => esc_html__( 'Set number of columns on smaller breakpoints.', 'bricks' ),
+			'required'    => [ 'layout', '=', 'metro' ],
 		];
 
 		$this->controls['gutter'] = [

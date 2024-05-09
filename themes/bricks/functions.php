@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  *
  * @since 1.0
  */
-define( 'BRICKS_VERSION', '1.9.7.1' );
+define( 'BRICKS_VERSION', '1.9.8' );
 define( 'BRICKS_NAME', 'Bricks' );
 define( 'BRICKS_TEMP_DIR', 'bricks-temp' ); // Template import/export (JSON & ZIP)
 define( 'BRICKS_PATH', trailingslashit( get_template_directory() ) );    // require_once files
@@ -31,7 +31,11 @@ define( 'BRICKS_DB_GLOBAL_ELEMENTS', 'bricks_global_elements' );
 define( 'BRICKS_DB_GLOBAL_CLASSES', 'bricks_global_classes' );
 define( 'BRICKS_DB_GLOBAL_CLASSES_CATEGORIES', 'bricks_global_classes_categories' );
 define( 'BRICKS_DB_GLOBAL_CLASSES_LOCKED', 'bricks_global_classes_locked' );
+define( 'BRICKS_DB_GLOBAL_CLASSES_TIMESTAMP', 'bricks_global_classes_timestamp' );
+define( 'BRICKS_DB_GLOBAL_CLASSES_USER', 'bricks_global_classes_user' );
 define( 'BRICKS_DB_PSEUDO_CLASSES', 'bricks_global_pseudo_classes' );
+define( 'BRICKS_DB_GLOBAL_VARIABLES', 'bricks_global_variables' );
+define( 'BRICKS_DB_GLOBAL_VARIABLES_CATEGORIES', 'bricks_global_variables_categories' );
 define( 'BRICKS_DB_PINNED_ELEMENTS', 'bricks_pinned_elements' );
 define( 'BRICKS_DB_SIDEBARS', 'bricks_sidebars' );
 define( 'BRICKS_DB_THEME_STYLES', 'bricks_theme_styles' );
@@ -102,6 +106,16 @@ if ( ! defined( 'BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES' ) ) {
 // Global data: Global classes categories
 if ( ! defined( 'BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES_CATEGORIES' ) ) {
 	define( 'BRICKS_MULTISITE_USE_MAIN_SITE_CLASSES_CATEGORIES', false );
+}
+
+// Global data: Global variables
+if ( ! defined( 'BRICKS_MULTISITE_USE_MAIN_SITE_VARIABLES' ) ) {
+	define( 'BRICKS_MULTISITE_USE_MAIN_SITE_VARIABLES', false );
+}
+
+// Global data: Global variables categories
+if ( ! defined( 'BRICKS_MULTISITE_USE_MAIN_SITE_VARIABLES_CATEGORIES' ) ) {
+	define( 'BRICKS_MULTISITE_USE_MAIN_SITE_VARIABLES_CATEGORIES', false );
 }
 
 // Global data: Global elements

@@ -11,16 +11,17 @@ class Assets {
 	public static $global_colors = [];
 
 	public static $inline_css = [
-		'color_vars'     => '',
-		'theme_style'    => '',
-		'global'         => '',
-		'global_classes' => '',
-		'page'           => '',
-		'template'       => '',
-		'header'         => '',
-		'content'        => '',
-		'footer'         => '',
-		'popup'          => '',
+		'color_vars'       => '',
+		'theme_style'      => '',
+		'global'           => '',
+		'global_classes'   => '',
+		'global_variables' => '',
+		'page'             => '',
+		'template'         => '',
+		'header'           => '',
+		'content'          => '',
+		'footer'           => '',
+		'popup'            => '',
 	];
 
 	public static $elements = [];
@@ -328,6 +329,13 @@ class Assets {
 			self::$inline_css['global'] = trim( Database::$global_settings['customCss'] );
 		}
 
+		// STEP Global variables (@since 1.9.8)
+		$global_variables = self::get_global_variables();
+		$variables_css    = self::format_variables_as_css( $global_variables );
+		if ( $variables_css ) {
+			self::$inline_css['global_variables'] = $variables_css;
+		}
+
 		// Check: Use active template ID to retrieve page data
 		$content_template_id = Database::$active_templates['content'];
 
@@ -428,9 +436,14 @@ class Assets {
 
 		// STEP: Concatinate styles (respecting precedences)
 
+		// Global Variables
+		if ( ! empty( self::$inline_css['global_variables'] ) ) {
+			$inline_css .= "/* GLOBAL VARIABLES CSS */\n" . self::$inline_css['global_variables'];
+		}
+
 		// Color palettes
 		if ( ! empty( self::$inline_css['color_vars'] ) ) {
-			$inline_css .= "/* COLOR VARS */\n" . self::$inline_css['color_vars'];
+			$inline_css .= "\n/* COLOR VARS */\n" . self::$inline_css['color_vars'];
 		}
 
 		// Theme Styles
@@ -510,7 +523,8 @@ class Assets {
 			foreach ( $palette['colors'] as $color ) {
 				$color_value = '';
 
-				// Plain 'raw' color value (e.g. 'blue', 'red')
+				// 'raw' color value (e.g. 'blue', 'var(--custom-var)', etc.)
+				// if ( ! empty( $color['raw'] ) ) { // NOTE: Not working (#86bw0wage)
 				if ( ! empty( $color['raw'] ) && strpos( $color['raw'], 'var(' ) === false ) {
 					$color_value = bricks_render_dynamic_data( $color['raw'], self::$post_id );
 				} elseif ( ! empty( $color['rgb'] ) ) {
@@ -523,8 +537,8 @@ class Assets {
 					continue;
 				}
 
-				// Skip: color has no 'id' (@since 1.7.2)
-				$color_id = isset( $color['id'] ) ? $color['id'] : false;
+				// Skip: color has no 'id'
+				$color_id = $color['id'] ?? false;
 
 				if ( ! $color_id ) {
 					continue;
@@ -532,7 +546,7 @@ class Assets {
 
 				$css_var = "--bricks-color-{$color_id}";
 
-				$raw_value = ! empty( $color['raw'] ) ? $color['raw'] : '';
+				$raw_value = $color['raw'] ?? '';
 
 				// 'raw' value is CSS var
 				if ( strpos( $raw_value, 'var(' ) !== false ) {
@@ -644,6 +658,28 @@ class Assets {
 
 		return $inline_css;
 	}
+
+	/**
+	 * Get global variables
+	 *
+	 * @since 1.9.8
+	 */
+	public static function get_global_variables() {
+		return Database::$global_data['globalVariables'] ?? [];
+	}
+
+	public static function format_variables_as_css( $variables ) {
+		$css = ':root {';
+		foreach ( $variables as $variable ) {
+			// Ensure that both 'name' and 'value' are set for each variable
+			if ( isset( $variable['name'] ) && isset( $variable['value'] ) ) {
+				$css .= "--{$variable['name']}: {$variable['value']};";
+			}
+		}
+		$css .= '}';
+		return $css;
+	}
+
 
 	/**
 	 * Generate global classes CSS string
@@ -1550,7 +1586,7 @@ class Assets {
 								// All four border sides have same value: Use 'border' CSS shorthand
 								if ( count( $border_width_values ) === 4 && count( array_unique( $border_width_values ) ) === 1 ) {
 									// border: 0
-									if ( $border_width_values[0] == 0 ) {
+									if ( $border_width_values[0] == '0' ) {
 										$css_rules[ $css_selector ][] = 'border: 0';
 									}
 
@@ -2025,17 +2061,30 @@ class Assets {
 							break;
 
 						case 'text-shadow':
-							$text_shadow = [];
-
-							$text_shadow_values = ! empty( $setting_value['values'] ) ? $setting_value['values'] : '';
+							$text_shadow        = [];
+							$text_shadow_values = $setting_value['values'] ?? '';
 
 							if ( $text_shadow_values ) {
-								$text_shadow[] = ! empty( $text_shadow_values['offsetX'] ) ? $text_shadow_values['offsetX'] . 'px' : 0;
-								$text_shadow[] = ! empty( $text_shadow_values['offsetY'] ) ? $text_shadow_values['offsetY'] . 'px' : 0;
-								$text_shadow[] = ! empty( $text_shadow_values['blur'] ) ? $text_shadow_values['blur'] . 'px' : 0;
+								if ( ! empty( $text_shadow_values['offsetX'] ) ) {
+									$text_shadow[] = is_numeric( $text_shadow_values['offsetX'] ) ? $text_shadow_values['offsetX'] . 'px' : $text_shadow_values['offsetX'];
+								} else {
+									$text_shadow[] = 0;
+								}
+
+								if ( ! empty( $text_shadow_values['offsetY'] ) ) {
+									$text_shadow[] = is_numeric( $text_shadow_values['offsetY'] ) ? $text_shadow_values['offsetY'] . 'px' : $text_shadow_values['offsetY'];
+								} else {
+									$text_shadow[] = 0;
+								}
+
+								if ( ! empty( $text_shadow_values['blur'] ) ) {
+									$text_shadow[] = is_numeric( $text_shadow_values['blur'] ) ? $text_shadow_values['blur'] . 'px' : $text_shadow_values['blur'];
+								} else {
+									$text_shadow[] = 0;
+								}
 							}
 
-							$text_shadow_color = ! empty( $setting_value['color'] ) ? $setting_value['color'] : '';
+							$text_shadow_color = $setting_value['color'] ?? '';
 
 							if ( $text_shadow_color ) {
 								$color_code = self::generate_css_color( $text_shadow_color );
@@ -2111,17 +2160,30 @@ class Assets {
 										break;
 
 									case 'text-shadow':
-										$text_shadow = [];
-
-										$text_shadow_values = isset( $font_value['values'] ) ? $font_value['values'] : '';
+										$text_shadow        = [];
+										$text_shadow_values = $font_value['values'] ?? '';
 
 										if ( $text_shadow_values ) {
-											$text_shadow[] = isset( $text_shadow_values['offsetX'] ) && ! empty( $text_shadow_values['offsetX'] ) ? $text_shadow_values['offsetX'] . 'px' : 0;
-											$text_shadow[] = isset( $text_shadow_values['offsetY'] ) && ! empty( $text_shadow_values['offsetY'] ) ? $text_shadow_values['offsetY'] . 'px' : 0;
-											$text_shadow[] = isset( $text_shadow_values['blur'] ) && ! empty( $text_shadow_values['blur'] ) ? $text_shadow_values['blur'] . 'px' : 0;
+											if ( ! empty( $text_shadow_values['offsetX'] ) ) {
+												$text_shadow[] = is_numeric( $text_shadow_values['offsetX'] ) ? $text_shadow_values['offsetX'] . 'px' : $text_shadow_values['offsetX'];
+											} else {
+												$text_shadow[] = 0;
+											}
+
+											if ( ! empty( $text_shadow_values['offsetY'] ) ) {
+												$text_shadow[] = is_numeric( $text_shadow_values['offsetY'] ) ? $text_shadow_values['offsetY'] . 'px' : $text_shadow_values['offsetY'];
+											} else {
+												$text_shadow[] = 0;
+											}
+
+											if ( ! empty( $text_shadow_values['blur'] ) ) {
+												$text_shadow[] = is_numeric( $text_shadow_values['blur'] ) ? $text_shadow_values['blur'] . 'px' : $text_shadow_values['blur'];
+											} else {
+												$text_shadow[] = 0;
+											}
 										}
 
-										$text_shadow_color = isset( $font_value['color'] ) ? $font_value['color'] : '';
+										$text_shadow_color = $font_value['color'] ?? '';
 
 										if ( $text_shadow_color ) {
 											$color_code = self::generate_css_color( $text_shadow_color );

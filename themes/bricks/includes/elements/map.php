@@ -270,14 +270,15 @@ class Element_Map extends Element {
 		];
 
 		$this->controls['customStyle'] = [
-			'tab'         => 'content',
-			'group'       => 'settings',
-			'label'       => esc_html__( 'Custom map style', 'bricks' ),
-			'type'        => 'code',
-			'mode'        => 'json',
+			'tab'          => 'content',
+			'group'        => 'settings',
+			'label'        => esc_html__( 'Custom map style', 'bricks' ),
+			'type'         => 'code',
+			'mode'         => 'json',
+			'hasVariables' => false,
 			// translators: %s: Link to snazzymaps.com
-			'description' => sprintf( esc_html__( 'Copy+paste code from one of the maps over at %s', 'bricks' ), '<a target="_blank" href="https://snazzymaps.com/explore">snazzymaps.com/explore</a>' ),
-			'required'    => [ 'style', '=', 'custom' ],
+			'description'  => sprintf( esc_html__( 'Copy+paste code from one of the maps over at %s', 'bricks' ), '<a target="_blank" href="https://snazzymaps.com/explore">snazzymaps.com/explore</a>' ),
+			'required'     => [ 'style', '=', 'custom' ],
 		];
 
 		$this->controls['scrollwheel'] = [

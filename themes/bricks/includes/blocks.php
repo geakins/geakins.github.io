@@ -251,7 +251,10 @@ class Blocks {
 			// Get block HTML string plus comment attributes
 			$block = $element_instance->convert_element_settings_to_block( $element['settings'] );
 
-			$blocks[] = serialize_block( $block );
+			// Remove curly brackets from {post_content} to avoid endless loop and memory exhaustion (@since 1.9.8)
+			if ( strpos( serialize_block( $block ), '{post_content}' ) !== false ) {
+				$blocks[] = str_replace( '{post_content}', '(post_content)', serialize_block( $block ) );
+			}
 		}
 
 		if ( count( $blocks ) ) {

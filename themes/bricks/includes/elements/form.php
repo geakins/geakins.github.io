@@ -418,14 +418,15 @@ class Element_Form extends Element {
 				],
 
 				'html'                       => [
-					'label'       => 'HTML',
-					'type'        => 'code',
-					'mode'        => 'xml',
-					'description' => sprintf(
+					'label'        => 'HTML',
+					'type'         => 'code',
+					'mode'         => 'xml',
+					'hasVariables' => false,
+					'description'  => sprintf(
 						esc_html__( 'To add decorative text, but not user input. Runs through %s.', 'bricks' ),
 						'<a href="https://developer.wordpress.org/reference/functions/wp_kses_post/" target="_blank">wp_kses_post</a>'
 					),
-					'required'    => [ 'type', '=', [ 'html' ] ],
+					'required'     => [ 'type', '=', [ 'html' ] ],
 				],
 			],
 
@@ -1794,7 +1795,7 @@ class Element_Form extends Element {
 				}
 			}
 
-			if ( ! empty( $field['label'] ) && $field['type'] != 'hidden' ) {
+			if ( ! empty( $field['label'] ) && ! isset( $settings['showLabels'] ) && $field['type'] != 'hidden' ) {
 				$this->set_attribute( "field-$index", 'aria-label', $field['label'] );
 			}
 

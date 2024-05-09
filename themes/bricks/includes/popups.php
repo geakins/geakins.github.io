@@ -233,6 +233,7 @@ class Popups {
 				'on' => esc_html__( 'Display on breakpoints', 'bricks' ),
 			],
 			'placeholder' => esc_html__( 'Start display at breakpoint', 'bricks' ),
+			'themeStyle'  => true,
 		];
 
 		self::$controls['popupShowAt'] = [
@@ -241,6 +242,7 @@ class Popups {
 			'options'     => $breakpoints_options,
 			'placeholder' => esc_html__( 'Any breakpoint', 'bricks' ),
 			'required'    => [ 'popupBreakpointMode', '!=', 'on' ],
+			'themeStyle'  => true,
 		];
 
 		self::$controls['popupShowOn'] = [
@@ -250,6 +252,7 @@ class Popups {
 			'options'     => $breakpoints_options,
 			'placeholder' => esc_html__( 'Any breakpoint', 'bricks' ),
 			'required'    => [ 'popupBreakpointMode', '=', 'on' ],
+			'themeStyle'  => true,
 		];
 
 		// BACKDROP
@@ -260,32 +263,46 @@ class Popups {
 			'type'  => 'separator',
 		];
 
+		/**
+		 * Disable backdrop
+		 *
+		 * @since 1.9.8
+		 */
+		self::$controls['popupDisableBackdrop'] = [
+			'group'      => 'popup',
+			'label'      => esc_html__( 'Disable backdrop', 'bricks' ),
+			'type'       => 'checkbox',
+			'themeStyle' => true,
+		];
+
 		self::$controls['popupBackground'] = [
-			'group'   => 'popup',
-			'label'   => esc_html__( 'Background', 'bricks' ),
-			'type'    => 'background',
-			'css'     => [
+			'group'    => 'popup',
+			'label'    => esc_html__( 'Background', 'bricks' ),
+			'type'     => 'background',
+			'css'      => [
 				[
 					'property' => 'background',
 					'selector' => '&.brx-popup .brx-popup-backdrop',
 				],
 			],
-			'exclude' => 'video',
+			'exclude'  => 'video',
+			'required' => [ 'popupDisableBackdrop', '!=', true ],
 		];
 
 		// Backdrop transition
 
 		self::$controls['popupBackdropTransition'] = [
-			'group'  => 'popup',
-			'label'  => esc_html__( 'Transition', 'bricks' ),
-			'type'   => 'text',
-			'inline' => true,
-			'css'    => [
+			'group'    => 'popup',
+			'label'    => esc_html__( 'Transition', 'bricks' ),
+			'type'     => 'text',
+			'inline'   => true,
+			'css'      => [
 				[
 					'property' => 'transition',
 					'selector' => '&.brx-popup .brx-popup-backdrop',
 				],
 			],
+			'required' => [ 'popupDisableBackdrop', '!=', true ],
 		];
 
 		// CONTENT
@@ -511,7 +528,7 @@ class Popups {
 		];
 
 		// Popup breakpoint mode (start show at OR show on) @since 1.9.4
-		$popup_breakpoint_mode = $popup_template_settings['popupBreakpointMode'] ?? 'at';
+		$popup_breakpoint_mode = $popup_template_settings['popupBreakpointMode'] ?? Theme_Styles::$active_settings['popup']['popupBreakpointMode'] ?? 'at';
 
 		/**
 		 * STEP: Set the show at 'width' according to the selected breakpoint
@@ -520,8 +537,9 @@ class Popups {
 		 *
 		 * @since 1.9
 		 */
-		if ( $popup_breakpoint_mode === 'at' && isset( $popup_template_settings['popupShowAt'] ) ) {
-			$breakpoint = Breakpoints::get_breakpoint_by( 'key', $popup_template_settings['popupShowAt'] );
+		$show_popup_at_breakpoint = $popup_template_settings['popupShowAt'] ?? Theme_Styles::$active_settings['popup']['popupShowAt'] ?? false;
+		if ( $popup_breakpoint_mode === 'at' && $show_popup_at_breakpoint ) {
+			$breakpoint = Breakpoints::get_breakpoint_by( 'key', $show_popup_at_breakpoint );
 
 			if ( $breakpoint ) {
 				$width = $breakpoint['width'] ?? null;
@@ -554,7 +572,9 @@ class Popups {
 		 *
 		 * @since 1.9.4
 		 */
-		if ( $popup_breakpoint_mode === 'on' && isset( $popup_template_settings['popupShowOn'] ) ) {
+		$show_popup_on_breakpoints = $popup_template_settings['popupShowOn'] ?? Theme_Styles::$active_settings['popup']['popupShowOn'] ?? false;
+
+		if ( $popup_breakpoint_mode === 'on' && is_array( $show_popup_on_breakpoints ) ) {
 			$breakpoints = bricks_is_frontend() ? self::get_breakpoints() : [];
 
 			// Get all 'width' values from breakpoints
@@ -568,7 +588,7 @@ class Popups {
 			$width_ranges = [];
 
 			// STEP: Loop through each breakpoint selected by the user
-			foreach ( $popup_template_settings['popupShowOn'] as $selected_breakpoint_key ) {
+			foreach ( $show_popup_on_breakpoints as $selected_breakpoint_key ) {
 				// Retrieve the details of the selected breakpoint
 				$selected_breakpoint_details = Breakpoints::get_breakpoint_by( 'key', $selected_breakpoint_key );
 
@@ -780,12 +800,19 @@ class Popups {
 
 		$html  = "<div {$attributes}>";
 		$html .= "<div class=\"$popup_content_classes\">";
+
 		// Render popup content only if not popupAjax (@since 1.9.4)
 		if ( ! isset( $popup_template_settings['popupAjax'] ) ) {
 			$html .= $popup_content;
 		}
+
 		$html .= '</div>';
-		$html .= '<div class="brx-popup-backdrop"></div>';
+
+		// Popup backdrop, if not disabled (@since 1.9.8)
+		if ( ! isset( Theme_Styles::$active_settings['popup']['popupDisableBackdrop'] ) && ! isset( $popup_template_settings['popupDisableBackdrop'] ) ) {
+			$html .= '<div class="brx-popup-backdrop"></div>';
+		}
+
 		$html .= '</div>';
 
 		return $html;

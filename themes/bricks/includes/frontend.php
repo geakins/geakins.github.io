@@ -439,6 +439,10 @@ class Frontend {
 		 *
 		 * @since 1.8.2
 		 */
+
+		// Performance improvement (@since 1.9.8)
+		Assets::generate_global_classes();
+
 		$global_classes = Assets::$inline_css['global_classes'];
 
 		if ( $global_classes ) {

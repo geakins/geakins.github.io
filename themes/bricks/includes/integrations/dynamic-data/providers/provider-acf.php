@@ -616,6 +616,15 @@ class Provider_Acf extends Base {
 					// The loop already sets the global $post
 					$post_id = get_the_ID();
 
+					// $post_id is still empty && we are in the builder call: Try getting the queried object (#86by703hw)
+					if ( ! $post_id && \Bricks\Api::is_current_endpoint( 'render_element' ) ) {
+						$temp_post_object = \Bricks\Helpers::get_queried_object( $post_id );
+						// Ensure it is an object with ID property
+						if ( is_object( $temp_post_object ) && isset( $temp_post_object->ID ) ) {
+							$post_id = $temp_post_object->ID;
+						}
+					}
+
 					// Is a Group sub-field
 					if ( isset( $tag_object['parent']['type'] ) && $tag_object['parent']['type'] === 'group' ) {
 						return $this->get_acf_group_field_value( $tag_object, $post_id );
@@ -966,7 +975,14 @@ class Provider_Acf extends Base {
 
 				// If this is a nested repeater
 				if ( is_array( $loop_object ) && array_key_exists( $field['name'], $loop_object ) ) {
-					return $loop_object[ $field['name'] ];
+					$nested_loop_object = $loop_object[ $field['name'] ];
+
+					// If the field type is 'post_object', transform the single post object into an array. (@since 1.9.8)
+					if ( $field['type'] === 'post_object' && ! empty( $nested_loop_object ) ) {
+						$nested_loop_object = is_array( $nested_loop_object ) ? $nested_loop_object : [ $nested_loop_object ];
+					}
+
+					return $nested_loop_object;
 				}
 
 				// Nested repeater inside nested group (@since 1.9.1)

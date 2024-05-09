@@ -42,6 +42,7 @@ class Ajax {
 
 		add_action( 'wp_ajax_bricks_get_pages', [ $this, 'get_pages' ] );
 		add_action( 'wp_ajax_bricks_create_new_page', [ $this, 'create_new_page' ] );
+		add_action( 'wp_ajax_bricks_duplicate_post_page', [ $this, 'duplicate_content' ] );
 
 		add_action( 'wp_ajax_bricks_get_my_templates_data', [ $this, 'get_my_templates_data' ] );
 
@@ -296,6 +297,10 @@ class Ajax {
 	public function create_new_page() {
 		self::verify_request( 'bricks-nonce-builder' );
 
+		if ( ! current_user_can( Admin::EDITING_CAP ) ) {
+			wp_send_json_error( esc_html__( 'Not allowed', 'bricks' ) );
+		}
+
 		$new_page_id = wp_insert_post(
 			[
 				'post_title' => ! empty( $_POST['title'] ) ? esc_html( $_POST['title'] ) : esc_html__( '(no title)', 'bricks' ),
@@ -304,6 +309,29 @@ class Ajax {
 		);
 
 		wp_send_json_success( $new_page_id );
+	}
+
+	/**
+	 * Duplicate page or post in the builder (Bricks or WordPress)
+	 *
+	 * @since 1.9.8
+	 */
+	public function duplicate_content() {
+		self::verify_request( 'bricks-nonce-builder' );
+
+		if ( ! current_user_can( Admin::EDITING_CAP ) ) {
+			wp_send_json_error( esc_html__( 'Not allowed', 'bricks' ) );
+		}
+
+		$post_id = ! empty( $_POST['postId'] ) ? absint( $_POST['postId'] ) : 0;
+
+		$new_post_id = Admin::duplicate_content( $post_id );
+
+		if ( ! $new_post_id ) {
+			wp_send_json_error( esc_html__( 'Post could not be duplicated', 'bricks' ) );
+		}
+
+		wp_send_json_success( $new_post_id );
 	}
 
 	/**
@@ -742,7 +770,7 @@ class Ajax {
 
 		$post = get_post( $post_id );
 
-		// Update post at the very end (@since 1.6)
+		// Update post at the very end
 		$the_post = false;
 
 		/**
@@ -750,13 +778,24 @@ class Ajax {
 		 */
 		$revision_id = 0;
 
-		// Check: Bricks elements data changed. If not, don't save post & don't create revision (@since 1.7.1)
+		// Check: Bricks elements data changed. If not, don't save post & don't create revision
 		$bricks_data_changed = isset( $_POST['header'] ) || isset( $_POST['content'] ) || isset( $_POST['footer'] );
 
-		// Page settings changed: Re-generate external CSS file (@since 1.8)
+		// Page settings changed: Re-generate external CSS file
 		if ( ! $bricks_data_changed ) {
 			$bricks_data_changed = isset( $_POST['pageSettings'] );
 		}
+
+		/**
+		 * Collect on save conflicts
+		 *
+		 * Global data in database differs from builder data
+		 *
+		 * Data: globalClasses
+		 *
+		 * @since 1.9.8
+		 */
+		$conflicts = [];
 
 		/**
 		 * Create revision if data contains 'header', 'footer', or 'content'
@@ -785,6 +824,7 @@ class Ajax {
 
 		// Check user capabilities (@since 1.5.4)
 		$has_full_access = Capabilities::current_user_has_full_access();
+		$timezone_offset = get_option( 'gmt_offset' ) * HOUR_IN_SECONDS;
 
 		/**
 		 * Save color palettes
@@ -808,8 +848,45 @@ class Ajax {
 		 */
 		if ( isset( $_POST['globalClasses'] ) && $has_full_access ) {
 			$global_classes = self::decode( $_POST['globalClasses'], false );
+			// $global_classes_db           = get_option( BRICKS_DB_GLOBAL_CLASSES, [] );
+			// $global_classes_db_timestamp = get_option( BRICKS_DB_GLOBAL_CLASSES_TIMESTAMP, 0 );
+			// $global_classes_db_user_id   = get_option( BRICKS_DB_GLOBAL_CLASSES_USER, 0 );
+			// $global_classes_timestamp    = $_POST['globalClassesTimestamp'] ?? 0;
 
-			Helpers::save_global_classes_in_db( $global_classes, "ajax_save_post_id_$post_id" );
+			// // Conflict: Another user from newer timestamp found in database (@since 1.9.8)
+			// if (
+			// $global_classes_db_user_id != get_current_user_id() &&
+			// $global_classes_timestamp && $global_classes_db_timestamp &&
+			// intval( $global_classes_db_timestamp ) > intval( $global_classes_timestamp )
+			// ) {
+			// $global_classes_db_user = get_user_by( 'ID', $global_classes_db_user_id );
+
+			// $conflicts[] = [
+			// 'key'      => 'globalClasses',
+			// 'current'  => $global_classes,
+			// 'incoming' => $global_classes_db,
+			// 'desc'     => sprintf(
+			// esc_html__( 'Global classes have been modified %1$s ago by %2$s.', 'bricks' ),
+			// human_time_diff( $global_classes_db_timestamp, current_time( 'timestamp' ) - $timezone_offset ),
+			// '<strong>' . ( $global_classes_db_user->display_name ?? esc_html__( 'another user', 'bricks' ) ) . '</strong>'
+			// ),
+			// ];
+			// }
+
+			$global_classes_response = Helpers::save_global_classes_in_db( $global_classes );
+
+			// if ( isset( $global_classes_response['timestamp'] ) ) {
+			// $_POST['globalClassesTimestamp'] = $global_classes_response['timestamp'];
+			// }
+
+			// if ( isset( $global_classes_response['user_id'] ) ) {
+			// $_POST['globalClassesUser'] = get_userdata( $global_classes_response['user_id'] )->display_name ?? '';
+			// }
+
+			// // STEP: Return conflicts
+			// if ( count( $conflicts ) ) {
+			// wp_send_json_error( [ 'conflicts' => $conflicts ] );
+			// }
 		}
 
 		/**
@@ -839,6 +916,32 @@ class Ajax {
 				update_option( BRICKS_DB_GLOBAL_CLASSES_CATEGORIES, $global_classes_categories, false );
 			} else {
 				delete_option( BRICKS_DB_GLOBAL_CLASSES_CATEGORIES );
+			}
+		}
+
+		/**
+		 * Save global variables
+		 *
+		 * @since 1.9.8
+		 */
+		if ( isset( $_POST['globalVariables'] ) && $has_full_access ) {
+			$global_variables = self::decode( $_POST['globalVariables'], false );
+
+			Helpers::save_global_variables_in_db( $global_variables );
+		}
+
+		/**
+		 * Save global variables categories
+		 *
+		 * @since 1.9.8
+		 */
+		if ( isset( $_POST['globalVariablesCategories'] ) && $has_full_access ) {
+			$global_variables_categories = self::decode( $_POST['globalVariablesCategories'], false );
+
+			if ( is_array( $global_variables_categories ) && count( $global_variables_categories ) ) {
+				update_option( BRICKS_DB_GLOBAL_VARIABLES_CATEGORIES, $global_variables_categories, false );
+			} else {
+				delete_option( BRICKS_DB_GLOBAL_VARIABLES_CATEGORIES );
 			}
 		}
 

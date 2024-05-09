@@ -79,7 +79,7 @@ class Element_Text extends Element {
 	public function render() {
 		$settings = $this->settings;
 
-		if ( ! isset( $settings['text'] ) ) {
+		if ( ! isset( $settings['text'] ) || $settings['text'] === '' ) {
 			return;
 		}
 
@@ -92,7 +92,7 @@ class Element_Text extends Element {
 		// Trimming the content to the specified number of words while handling HTML tags properly (@since 1.9.3)
 		if ( ! empty( $settings['wordsLimit'] ) && is_numeric( $settings['wordsLimit'] ) ) {
 			$more    = $settings['readMore'] ?? '';
-			$content = Helpers::trim_words( $content, $settings['wordsLimit'], $more, true );
+			$content = Helpers::trim_words( $content, $settings['wordsLimit'], $more, true, false );
 		}
 
 		if ( ! empty( $settings['type'] ) ) {

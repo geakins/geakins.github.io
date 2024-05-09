@@ -107,6 +107,12 @@ $controls['widthMin'] = [
 			'property' => 'min-width',
 			'selector' => '.brxe-container',
 		],
+
+		// Single post, WooCommerce cart, etc.
+		[
+			'property' => 'min-width',
+			'selector' => '#brx-content.wordpress',
+		],
 	],
 ];
 
@@ -120,6 +126,12 @@ $controls['widthMax'] = [
 		[
 			'property' => 'max-width',
 			'selector' => '.brxe-container',
+		],
+
+		// Single post, WooCommerce cart, etc.
+		[
+			'property' => 'max-width',
+			'selector' => '#brx-content.wordpress',
 		],
 	],
 ];

@@ -529,6 +529,11 @@ class Product_Gallery extends Element {
 		// STEP: single-product/product-thumbnails.php
 		if ( $attachment_ids && $product->get_image_id() ) {
 			foreach ( $attachment_ids as $attachment_id ) {
+				// Ensure the image still exists, svg is not supported in native product gallery too (@since 1.9.8)
+				if ( ! wp_attachment_is_image( $attachment_id ) ) {
+					continue;
+				}
+
 				$html .= apply_filters( 'woocommerce_single_product_image_thumbnail_html', wc_get_gallery_image_html( $attachment_id ), $attachment_id ); // phpcs:disable WordPress.XSS.EscapeOutput.OutputNotEscaped
 			}
 		}

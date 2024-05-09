@@ -49,6 +49,12 @@ class Provider_Wp extends Base {
 				'group' => 'post'
 			],
 
+			// @since 1.9.8
+			'post_slug'                  => [
+				'label' => esc_html__( 'Post slug', 'bricks' ),
+				'group' => 'post'
+			],
+
 			'post_date'                  => [
 				'label' => esc_html__( 'Post date', 'bricks' ),
 				'group' => 'post',
@@ -268,6 +274,7 @@ class Provider_Wp extends Base {
 			'login'        => esc_html__( 'Username', 'bricks' ),
 			'email'        => esc_html__( 'Email', 'bricks' ),
 			'url'          => esc_html__( 'Website', 'bricks' ),
+			'author_url'   => esc_html__( 'User author URL', 'bricks' ),
 			'nicename'     => esc_html__( 'Nicename', 'bricks' ),
 			'nickname'     => esc_html__( 'Nickname', 'bricks' ),
 			'description'  => esc_html__( 'Bio', 'bricks' ),
@@ -492,10 +499,15 @@ class Provider_Wp extends Base {
 
 		$render = isset( $this->tags[ $tag ]['render'] ) ? $this->tags[ $tag ]['render'] : $tag;
 
+		// Always set render to post_metas for cf_xxx even if not registered in $this->tags (@since 1.9.8)
+		if ( strpos( $tag, 'cf_' ) === 0 ) {
+			$render = 'post_metas';
+		}
+
 		$uri = ! empty( $_SERVER['REQUEST_URI'] ) ? parse_url( $_SERVER['REQUEST_URI'] ) : '';
 		if ( is_array( $uri ) && ! empty( $uri ) ) {
 			foreach ( $uri as $key => $val ) {
-				if ( $val && strpos( $val, ':' ) !== false ) {
+				if ( $val && strpos( $val, 'echo:' ) !== false ) {
 					unset( $filters['meta_key'] );
 				}
 			}
@@ -509,6 +521,10 @@ class Provider_Wp extends Base {
 
 			case 'post_url':
 				$value = get_permalink( $post_id );
+				break;
+
+			case 'post_slug':
+				$value = $post->post_name ?? get_post_field( 'post_name', $post_id );
 				break;
 
 			case 'post_title':
@@ -677,6 +693,15 @@ class Provider_Wp extends Base {
 				}
 
 				/**
+				 * Get the correct user ID inside a User query loop
+				 *
+				 * @since 1.9.8
+				 */
+				if ( Query::is_looping() && Query::get_loop_object_type() === 'user' ) {
+					$user_id = Query::get_loop_object_id();
+				}
+
+				/**
 				 * Frontend: Preview template author & not looping: Get template preview author
 				 *
 				 * @since 1.8.2
@@ -726,6 +751,7 @@ class Provider_Wp extends Base {
 			case 'wp_user_display_name':
 			case 'wp_user_picture':
 			case 'wp_user_meta':
+			case 'wp_user_author_url':
 				$user = Query::get_loop_object_type() == 'user' ? Query::get_loop_object() : wp_get_current_user();
 
 				/**
@@ -859,6 +885,12 @@ class Provider_Wp extends Base {
 				// NOTE: Undocumented
 				$value = apply_filters( "bricks/dynamic_data/meta_value/$meta_key", $value, $post );
 
+				// cf_xxx support array_value filter (@since 1.9.8)
+				if ( isset( $filters['array_value'] ) && is_array( $value ) ) {
+					// Force context to text
+					$context = 'text';
+					$value   = $this->return_array_value( $value, $filters );
+				}
 				break;
 
 			case 'echo':
@@ -925,6 +957,11 @@ class Provider_Wp extends Base {
 									$element_data['element']['settings']['query'] = [];
 								}
 							}
+						}
+
+						// Add query setting key for Posts element when default (no settings), otherwise count always zero (@since 1.9.8)
+						if ( $element_name === 'posts' && empty( $element_data['element']['settings']['query'] ) ) {
+							$element_data['element']['settings']['query'] = [];
 						}
 
 						// Only init query if query settings is available
@@ -1103,10 +1140,50 @@ class Provider_Wp extends Base {
 			$callback = trim( $callback );
 		}
 
-		// Return: Function name is not whitelisted
-		$whitelisted_function_names = apply_filters( 'bricks/code/echo_function_names', [] );
+		// Check if function name is allowed
+		$whitelisted_function_names = apply_filters( 'bricks/code/echo_function_names', $callback );
+		$is_function_allowed        = false;
 
-		if ( ! is_array( $whitelisted_function_names ) || ! in_array( $callback, $whitelisted_function_names ) ) {
+		/**
+		 * Boolean returned
+		 *
+		 * Allow all functions if true is returned.
+		 *
+		 * @since 1.9.8
+		 */
+		if ( is_bool( $whitelisted_function_names ) ) {
+			$is_function_allowed = $whitelisted_function_names === true;
+		}
+
+		/**
+		 * Array returned
+		 *
+		 * Check if the function name is in the array.
+		 *
+		 * 1. Literal function name comparison
+		 * 2: Through regex pattern (@since 1.9.8)
+		 */
+		elseif ( is_array( $whitelisted_function_names ) && ! empty( $whitelisted_function_names ) ) {
+			foreach ( $whitelisted_function_names as $item ) {
+				// It's a pattern
+				if ( strpos( $item, '@' ) === 0 ) {
+					// Remove the '#' and check if the function name matches the pattern
+					$pattern = substr( $item, 1 );
+
+					if ( preg_match( '/' . $pattern . '/', $callback ) ) {
+						$is_function_allowed = true;
+						break;
+					}
+				} elseif ( $callback === $item ) {
+					// It's a direct match
+					$is_function_allowed = true;
+					break;
+				}
+			}
+		}
+
+		// Return: Not allowed to call this function name
+		if ( ! $is_function_allowed ) {
 			return '';
 		}
 
@@ -1214,6 +1291,10 @@ class Provider_Wp extends Base {
 				if ( ! empty( $filters['meta_key'] ) ) {
 					$value = get_user_meta( $user->ID, $filters['meta_key'], true );
 				}
+				break;
+
+			case 'author_url':
+				$value = get_author_posts_url( $user->ID );
 				break;
 		}
 

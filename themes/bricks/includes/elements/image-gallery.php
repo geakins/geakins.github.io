@@ -19,6 +19,7 @@ class Element_Image_Gallery extends Element {
 
 		if ( $layout === 'masonry' ) {
 			wp_enqueue_script( 'bricks-isotope' );
+			wp_enqueue_script( 'bricks-imagesloaded' );
 			wp_enqueue_style( 'bricks-isotope' );
 		}
 

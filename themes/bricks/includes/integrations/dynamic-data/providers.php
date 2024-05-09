@@ -35,16 +35,23 @@ class Providers {
 		// Priority set to 10000 due to CMB2 priority
 		add_action( 'init', [ $instance, 'register_providers' ], 10000 );
 
+		// Register tags on init after register_providers, otherwise pre_get_posts for main query unable to get tags (@since 1.9.8)
+		add_action( 'init', [ $instance, 'register_tags' ], 10001 );
+
 		// Register providers during WP REST API call (priority 7 to run before register_tags() on WP REST API)
 		add_action( 'rest_api_init', [ $instance, 'register_providers' ], 7 );
 
+		// Hook "init" doesn't run on REST API calls so we need this to register the tags when rendering elements (needed for Posts element) or fetching dynamic data content
+		add_action( 'rest_api_init', [ $instance, 'register_tags' ], 8 );
+
 		// Register tags before wp_enqueue_scripts (but not before wp to get the post custom fields)
 		// Priority = 8 to run before Setup::init_control_options
-		add_action( 'wp', [ $instance, 'register_tags' ], 8 );
+		// Not in use (@since 1.9.8), Register on 'init' hook above (#86bw2ytax)
+		// add_action( 'wp', [ $instance, 'register_tags' ], 8 );
 
 		// Hook "wp" doesn't run on AJAX/REST API calls so we need this to register the tags when rendering elements (needed for Posts element) or fetching dynamic data content
-		add_action( 'admin_init', [ $instance, 'register_tags' ], 8 );
-		add_action( 'rest_api_init', [ $instance, 'register_tags' ], 8 );
+		// Not in use (@since 1.9.8), Register on 'init' hook above (#86bw2ytax)
+		// add_action( 'admin_init', [ $instance, 'register_tags' ], 8 );
 
 		add_filter( 'bricks/dynamic_tags_list', [ $instance, 'add_tags_to_builder' ] );
 
@@ -122,6 +129,13 @@ class Providers {
 		 */
 		$pattern = '/{([\wÀ-ÖØ-öø-ÿ\-\s\.\/:\(\)\'@|,]+)}/u';
 
+		/**
+		 * Matches the echo tag pattern (#86bwebj6m)
+		 *
+		 * @since 1.9.8
+		 */
+		$echo_pattern = '/echo:([a-zA-Z0-9_]+)/';
+
 		// Get a list of tags to exclude from the Dynamic Data logic
 		$exclude_tags = apply_filters( 'bricks/dynamic_data/exclude_tags', [] );
 
@@ -145,13 +159,22 @@ class Providers {
 
 		$dd_tags_in_content = [];
 		$dd_tags_found      = [];
+		$echo_tags_found    = [];
 
 		// Find all dynamic data tags in the content
 		preg_match_all( $pattern, $content, $dd_tags_in_content );
 
-		if ( ! empty( $dd_tags_in_content[1] ) ) {
-			$dd_tags_in_content = $dd_tags_in_content[1];
+		$dd_tags_in_content = ! empty( $dd_tags_in_content[1] ) ? $dd_tags_in_content[1] : [];
 
+		// Find all echo tags in the content (@since 1.9.8)
+		preg_match_all( $echo_pattern, $content, $echo_tags_found );
+
+		// Combine the dynamic data tags from the content and the echo tags (@since 1.9.8)
+		if ( ! empty( $echo_tags_found[0] ) ) {
+			$dd_tags_in_content = array_merge( $dd_tags_in_content, $echo_tags_found[0] );
+		}
+
+		if ( ! empty( $dd_tags_in_content ) ) {
 			/**
 			 * $dd_tags_in_content only matches the pattern, but some codes from Code element could match the pattern too.
 			 * Example: function test() { return 'Hello World'; } will match the pattern, but it's not a dynamic data tag.
@@ -212,7 +235,9 @@ class Providers {
 					$value = false;
 				}
 
-				if ( $value && strpos( $value, '{echo:' ) !== false ) {
+				// NOTE: Undocumented (only enable if really needed)
+				$echo_everywhere = apply_filters( 'bricks/code/echo_everywhere', false );
+				if ( $value && strpos( $value, '{echo:' ) !== false && $echo_everywhere === false ) {
 					continue;
 				}
 
@@ -244,22 +269,10 @@ class Providers {
 		}
 
 		if ( ! array_key_exists( $tag, $tags ) ) {
-			// Last resort: Try to get field content if it is a WordPress custom field (@since 1.5.5)
+			// Last resort: Try to get field content if it is a WordPress custom field
 			if ( strpos( $tag, 'cf_' ) === 0 ) {
-				$meta_key = substr( $tag, 3 );
-
-				$post_id = isset( $post->ID ) ? $post->ID : 0;
-
-				// Get the field value
-				$value = get_post_meta( $post_id, $meta_key, true );
-
-				// NOTE: Undocumented
-				$value = apply_filters( "bricks/dynamic_data/meta_value/$meta_key", $value, $post );
-
-				$filters = $this->providers['wp']->get_filters_from_args( $args );
-
-				// Format the value based on the filters and context
-				return $this->providers['wp']->format_value_for_context( $value, $tag, $post_id, $filters, $context );
+				// Use get_tag_value function in provider-wp.php (@since 1.9.8)
+				return $this->providers['wp']->get_tag_value( $tag, $post, $args, $context );
 			}
 
 			/**

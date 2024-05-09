@@ -187,6 +187,16 @@ class Assets_Files {
 			wp_enqueue_style( 'bricks-color-palettes', $color_palettes_css_file_url, [], filemtime( $color_palettes_css_file_dir ) );
 		}
 
+		// STEP: Global variables (if not disabled in Bricks settings)
+		if ( ! Database::get_setting( 'disableVariablesManager', false ) ) {
+			$global_variables_css_file_dir = Assets::$css_dir . '/global-variables.min.css';
+			$global_variables_css_file_url = Assets::$css_url . '/global-variables.min.css';
+
+			if ( file_exists( $global_variables_css_file_dir ) ) {
+				wp_enqueue_style( 'bricks-global-variables', $global_variables_css_file_url, [], filemtime( $global_variables_css_file_dir ) );
+			}
+		}
+
 		// STEP: Global settings "Custom CSS"
 		$global_custom_css_file_dir = Assets::$css_dir . '/global-custom-css.min.css';
 		$global_custom_css_file_url = Assets::$css_url . '/global-custom-css.min.css';
@@ -532,6 +542,10 @@ class Assets_Files {
 				$file_name = Assets_Theme_Styles::generate_css_file( get_option( BRICKS_DB_THEME_STYLES, [] ) );
 				break;
 
+			case 'globalVariables':
+				$file_name = Assets_Global_Variables::generate_css_file( get_option( BRICKS_DB_GLOBAL_VARIABLES, [] ) );
+				break;
+
 			// Individual post
 			default:
 				$generating_type = 'post';
@@ -599,6 +613,7 @@ class Assets_Files {
 			'globalCustomCss',
 			'globalElements',
 			'themeStyles',
+			'globalVariables'
 		];
 
 		$custom_args = [

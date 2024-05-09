@@ -227,8 +227,9 @@ class Api {
 			return $templates;
 		}
 
-		$theme_styles   = get_option( BRICKS_DB_THEME_STYLES, false );
-		$global_classes = get_option( BRICKS_DB_GLOBAL_CLASSES, [] );
+		$theme_styles     = get_option( BRICKS_DB_THEME_STYLES, false );
+		$global_classes   = get_option( BRICKS_DB_GLOBAL_CLASSES, [] );
+		$global_variables = get_option( BRICKS_DB_GLOBAL_VARIABLES, [] );
 
 		// STEP: Add theme style to template data to import when inserting a template (@since 1.3.2)
 		foreach ( $templates as $index => $template ) {
@@ -286,13 +287,14 @@ class Api {
 
 		// Return all templates data
 		$templates_data = [
-			'timestamp' => current_time( 'timestamp' ),
-			'date'      => current_time( get_option( 'date_format' ) . ' (' . get_option( 'time_format' ) . ')' ),
-			'templates' => $templates,
-			'authors'   => Templates::get_template_authors(),
-			'bundles'   => Templates::get_template_bundles(),
-			'tags'      => Templates::get_template_tags(),
-			'get'       => $_GET, // Pass URL params to perform additional checks (e.g. 'password' as license key, etc.) @since 1.5.5
+			'timestamp'       => current_time( 'timestamp' ),
+			'date'            => current_time( get_option( 'date_format' ) . ' (' . get_option( 'time_format' ) . ')' ),
+			'templates'       => $templates,
+			'authors'         => Templates::get_template_authors(),
+			'bundles'         => Templates::get_template_bundles(),
+			'tags'            => Templates::get_template_tags(),
+			'globalVariables' => $global_variables, // @since 1.9.8
+			'get'             => $_GET, // Pass URL params to perform additional checks (e.g. 'password' as license key, etc.)
 		];
 
 		$templates_data = apply_filters( 'bricks/api/get_templates_data', $templates_data );
@@ -1040,15 +1042,7 @@ class Api {
 
 		$styles = ! empty( $inline_css ) ? "\n<style>/* AJAX QUERY RESULT CSS */\n{$inline_css}</style>\n" : '';
 
-		// STEP: Latest pagination HTML
-		$pagination_element = [
-			'name'     => 'pagination',
-			'settings' => [
-				'queryId' => $query_element_id,
-				'ajax'    => true,
-			],
-		];
-
+		// STEP: Set the base URL for pagination or the pagination links will be using API endpoint
 		if ( ! empty( $base_url ) ) {
 			add_filter(
 				'bricks/paginate_links_args',
@@ -1060,28 +1054,35 @@ class Api {
 			);
 		}
 
-		$pagination_html = Frontend::render_element( $pagination_element );
+		// STEP: Get updated filters HTML
+		$updated_filters = Query_Filters::get_updated_filters( $filters, $post_id );
 
 		// STEP: Query data
 		$query_data = Query::get_query_by_element_id( $query_element_id );
 
-		// Remove settings, query_result, loop_index, loop_object, is_looping properties
+		// Remove unnecessary properties
 		unset( $query_data->settings );
 		unset( $query_data->query_result );
 		unset( $query_data->loop_index );
 		unset( $query_data->loop_object );
 		unset( $query_data->is_looping );
 
-		$updated_filters = Query_Filters::get_updated_filters( $filters, $post_id, $query_data );
+		if ( isset( $query_data->query_vars['queryEditor'] ) ) {
+			unset( $query_data->query_vars['queryEditor'] );
+		}
+
+		if ( isset( $query_data->query_vars['signature'] ) ) {
+			unset( $query_data->query_vars['signature'] );
+		}
 
 		return rest_ensure_response(
 			[
 				'html'            => $html,
 				'styles'          => $styles,
 				'popups'          => $popups,
-				'pagination'      => $pagination_html,
 				'updated_filters' => $updated_filters,
 				'updated_query'   => $query_data,
+				// 'pagination'      => $pagination_html, (#86bxet3c3)
 				// 'page_filters'    => Query_Filters::$page_filters,
 				// 'filter_object_ids' => Query_Filters::$filter_object_ids,
 				// 'active_filters'  => Query_Filters::$active_filters,

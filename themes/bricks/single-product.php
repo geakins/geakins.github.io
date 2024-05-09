@@ -19,6 +19,7 @@ if ( have_posts() ) {
 			// @since 1.8.1 - Add standard WooCommerce product classes to the container
 			$attributes['class'] = (array) wc_get_product_class( '', $product );
 			$html_after_begin    = '';
+			$bricks_data_json    = wp_json_encode( $bricks_data );
 
 			/**
 			 * Auto render woo notice if not using Bricks WooCommerce "Notice" element
@@ -26,7 +27,7 @@ if ( have_posts() ) {
 			 * @since 1.8.1
 			 */
 			if ( ! Bricks\Woocommerce::use_bricks_woo_notice_element() ) {
-				$bricks_has_woo_notice_do_action = strpos( wp_json_encode( $bricks_data ), '{do_action:woocommerce_before_single_product}' ) !== false;
+				$bricks_has_woo_notice_do_action = strpos( $bricks_data_json, '{do_action:woocommerce_before_single_product}' ) !== false;
 
 				/**
 				 * Render woo notice if not added via Bricks {do_action:woocommerce_before_single_product} in single product template
@@ -36,6 +37,20 @@ if ( have_posts() ) {
 				if ( ! $bricks_has_woo_notice_do_action ) {
 					$html_after_begin = '<div class="woocommerce-notices-wrapper brxe-container">' . wc_print_notices( true ) . '</div>';
 				}
+			}
+
+			/**
+			 * Check if {do_action:woocommerce_single_product_summary} is used in the template
+			 *
+			 * If not, generate structured data.
+			 *
+			 * @since 1.9.8
+			 */
+			$bricks_has_woo_summary_do_action = strpos( $bricks_data_json, '{do_action:woocommerce_single_product_summary}' ) !== false;
+
+			if ( ! $bricks_has_woo_summary_do_action && is_a( WC()->structured_data, 'WC_Structured_Data' ) ) {
+				// Generate structured data, by default it's generated on the "woocommerce_single_product_summary" action
+				WC()->structured_data->generate_product_data( $product );
 			}
 
 			Bricks\Frontend::render_content( $bricks_data, $attributes, $html_after_begin );

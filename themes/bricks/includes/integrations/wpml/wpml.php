@@ -518,6 +518,8 @@ class Wpml {
 	 * @return string The modified title with the language suffix.
 	 */
 	public function add_langugage_to_post_title( $title, $page_id ) {
+		\Bricks\Ajax::verify_nonce( 'bricks-nonce-builder' );
+
 		if ( isset( $_GET['addLanguageToPostTitle'] ) ) {
 			$language_info = apply_filters( 'wpml_post_language_details', null, $page_id );
 			$language_code = ! empty( $language_info['language_code'] ) ? strtoupper( $language_info['language_code'] ) : '';

@@ -208,6 +208,7 @@ class Element_Container extends Element {
 				'position' => 'top-left',
 			],
 			'hasDynamicData' => false,
+			'hasVariables'   => true,
 			'css'            => [
 				[
 					'property' => 'grid-template-columns',
@@ -226,6 +227,7 @@ class Element_Container extends Element {
 				'position' => 'top-left',
 			],
 			'hasDynamicData' => false,
+			'hasVariables'   => true,
 			'css'            => [
 				[
 					'property' => 'grid-template-rows',
@@ -244,6 +246,7 @@ class Element_Container extends Element {
 				'position' => 'top-left',
 			],
 			'hasDynamicData' => false,
+			'hasVariables'   => true,
 			'css'            => [
 				[
 					'property' => 'grid-auto-columns',
@@ -261,6 +264,7 @@ class Element_Container extends Element {
 				'position' => 'top-left',
 			],
 			'hasDynamicData' => false,
+			'hasVariables'   => true,
 			'css'            => [
 				[
 					'property' => 'grid-auto-rows',
@@ -519,9 +523,9 @@ class Element_Container extends Element {
 				],
 			],
 			'inline'         => true,
-			'small'          => true,
 			'placeholder'    => 'auto',
 			'hasDynamicData' => false,
+			'hasVariables'   => true,
 			'required'       => [ '_display', '=', 'flex' ],
 		];
 

@@ -37,12 +37,10 @@ class Element_Post_Excerpt extends Element {
 			'placeholder'    => '...',
 		];
 
-		// @since 1.6.2
 		$this->controls['keepHTML'] = [
-			'tab'     => 'content',
-			'label'   => esc_html__( 'Keep formatting', 'bricks' ),
-			'type'    => 'checkbox',
-			'default' => false,
+			'tab'   => 'content',
+			'label' => esc_html__( 'Keep formatting', 'bricks' ),
+			'type'  => 'checkbox',
 		];
 	}
 

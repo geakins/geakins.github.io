@@ -78,7 +78,7 @@ class Filter_Search extends Filter_Element {
 
 	public function render() {
 		$this->input_name = $this->settings['name'] ?? "form-field-{$this->id}";
-		$placeholder      = $this->settings['placeholder'] ?? esc_html__( 'Search', 'bricks' );
+		$placeholder      = ! empty( $this->settings['placeholder'] ) ? $this->render_dynamic_data( $this->settings['placeholder'] ) : esc_html__( 'Search', 'bricks' );
 
 		if ( $this->is_filter_input() ) {
 			$this->set_as_filter();

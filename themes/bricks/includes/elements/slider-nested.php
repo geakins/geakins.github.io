@@ -43,8 +43,6 @@ class Element_Slider_Nested extends Element {
 
 	public function set_controls() {
 		$this->controls['_height']['css'][0]['selector'] = '.splide__slide';
-		$this->controls['_height']['css'][0]['selector'] = '.splide__slide';
-		$this->controls['_height']['css'][0]['selector'] = '.splide__slide';
 
 		$this->controls['_background']['default'] = [
 			'color' => [
@@ -76,12 +74,13 @@ class Element_Slider_Nested extends Element {
 		];
 
 		$this->controls['options'] = [
-			'group'       => 'options',
-			'label'       => esc_html__( 'Custom options', 'bricks' ),
-			'type'        => 'code',
-			'required'    => [ 'optionsType', '=', 'custom' ],
-			'description' => esc_html__( 'Provide your own options in JSON format', 'bricks' ) . ' (<a href="https://splidejs.com/guides/options" target="_blank" rel="noopener">' . esc_html__( 'learn more', 'bricks' ) . '</a>).',
-			'fullAccess'  => true,
+			'group'        => 'options',
+			'label'        => esc_html__( 'Custom options', 'bricks' ),
+			'type'         => 'code',
+			'hasVariables' => false,
+			'required'     => [ 'optionsType', '=', 'custom' ],
+			'description'  => esc_html__( 'Provide your own options in JSON format', 'bricks' ) . ' (<a href="https://splidejs.com/guides/options" target="_blank" rel="noopener">' . esc_html__( 'learn more', 'bricks' ) . '</a>).',
+			'fullAccess'   => true,
 		];
 
 		// Fixed settings:
@@ -1209,10 +1208,10 @@ class Element_Slider_Nested extends Element {
 		 *
 		 * TODO 'mediaQuery' for custom breakpoints
 		 */
-		$type = ! empty( $settings['type'] ) ? $settings['type'] : 'loop';
+		$type = $settings['type'] ?? 'loop';
 
 		// Spacing requires a unit
-		$gap = ! empty( $settings['gap'] ) ? $settings['gap'] : 0;
+		$gap = $settings['gap'] ?? 0;
 
 		// Add default unit
 		if ( is_numeric( $gap ) ) {
@@ -1226,6 +1225,18 @@ class Element_Slider_Nested extends Element {
 			// Custom arrows set OR use default splide SVG arrows if no custom arrows set
 			$arrows = ( ! empty( $settings['prevArrow'] ) && ! empty( $settings['nextArrow'] ) ) || ( empty( $settings['prevArrow'] ) && empty( $settings['nextArrow'] ) );
 		}
+
+		/**
+		 * Breakpoints media-query
+		 *
+		 * Use 'min' for mobile-first (min-with)
+		 * Use 'max' for desktop-first (max-width)
+		 *
+		 * https://splidejs.com/guides/options/#mediaQuery
+		 *
+		 * @since 1.9.8
+		 */
+		$media_query = Breakpoints::$is_mobile_first ? 'min' : 'max';
 
 		$splide_options = [
 			'type'         => $type,
@@ -1244,6 +1255,7 @@ class Element_Slider_Nested extends Element {
 			'pauseOnFocus' => isset( $settings['pauseOnFocus'] ),
 			'arrows'       => $arrows,
 			'pagination'   => isset( $settings['pagination'] ),
+			'mediaQuery'   => $media_query,
 		];
 
 		if ( isset( $settings['focus'] ) ) {
@@ -1272,9 +1284,9 @@ class Element_Slider_Nested extends Element {
 
 		foreach ( Breakpoints::$breakpoints as $breakpoint ) {
 			foreach ( array_keys( $splide_options ) as $option ) {
-				$setting_key      = "$option:{$breakpoint['key']}";
-				$breakpoint_width = ! empty( $breakpoint['width'] ) ? $breakpoint['width'] : false;
-				$setting_value    = isset( $settings[ $setting_key ] ) ? $settings[ $setting_key ] : false;
+				$setting_key      = $breakpoint['key'] === 'desktop' ? $option : "$option:{$breakpoint['key']}";
+				$breakpoint_width = $breakpoint['width'] ?? false;
+				$setting_value    = $settings[ $setting_key ] ?? false;
 
 				// Spacing requires a unit
 				if ( $option === 'gap' ) {
@@ -1282,6 +1294,10 @@ class Element_Slider_Nested extends Element {
 					if ( is_numeric( $setting_value ) ) {
 						$setting_value = "{$setting_value}px";
 					}
+				}
+
+				if ( $option === 'perPage' && isset( $breakpoint['base'] ) && $setting_value ) {
+					$splide_options['perPage'] = intval( $setting_value );
 				}
 
 				if ( $breakpoint_width && $setting_value !== false ) {
@@ -1305,7 +1321,7 @@ class Element_Slider_Nested extends Element {
 		$options_type = ! empty( $settings['optionsType'] ) ? $settings['optionsType'] : 'default';
 
 		if ( $options_type === 'custom' && ! empty( $settings['options'] ) ) {
-			$splide_options = trim( stripslashes( $settings['options'] ) );
+			$splide_options = is_array( $settings['options'] ) ? $settings['options'] : trim( stripslashes( $settings['options'] ) );
 		}
 
 		if ( is_array( $splide_options ) ) {

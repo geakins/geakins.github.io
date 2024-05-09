@@ -384,6 +384,7 @@ class Setup {
 		// STEP: Register scripts
 		wp_register_script( 'bricks-flatpickr', BRICKS_URL_ASSETS . 'js/libs/flatpickr.min.js', [ 'bricks-scripts' ], '4.5.2', true );
 		wp_register_script( 'bricks-isotope', BRICKS_URL_ASSETS . 'js/libs/isotope.min.js', [ 'bricks-scripts' ], '3.0.4', true );
+		wp_register_script( 'bricks-imagesloaded', BRICKS_URL_ASSETS . 'js/libs/imagesloaded.min.js', [ 'bricks-isotope' ], '5.0.0', true );
 
 		// Append '-brx' version suffix to avoid caching issues after renaming 'PhotoSwipe' JS class to 'PhotoSwipe5'
 		wp_register_script( 'bricks-photoswipe', BRICKS_URL_ASSETS . 'js/libs/photoswipe.umd.min.js', [ 'bricks-scripts' ], '5.3.7-brx', true );

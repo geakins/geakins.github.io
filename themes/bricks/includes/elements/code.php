@@ -27,13 +27,15 @@ class Element_Code extends Element {
 
 	public function set_controls() {
 		$this->controls['code'] = [
-			'tab'       => 'content',
-			'type'      => 'code',
-			'mode'      => 'php', // 'css', 'javascript', 'php',
-			'clearable' => false, // Required to always have 'mode' set for CodeMirror
-			'default'   => "<style>\nh1.my-heading {\n  color: crimson;\n}\n</style>\n\n<h1 class='my-heading'>Just some custom HTML</h1>",
-			'required'  => [ 'useDynamicData', '=', '' ],
-			'rerender'  => true,
+			'tab'            => 'content',
+			'type'           => 'code',
+			'mode'           => 'php', // 'css', 'javascript', 'php',
+			'clearable'      => false, // Required to always have 'mode' set for CodeMirror
+			'default'        => "<style>\nh1.my-heading {\n  color: crimson;\n}\n</style>\n\n<h1 class='my-heading'>Just some custom HTML</h1>",
+			'required'       => [ 'useDynamicData', '=', '' ],
+			'hasDynamicData' => true,
+			'hasVariables'   => true,
+			'syncExpand'     => false,
 		];
 
 		$this->controls['useDynamicData'] = [
@@ -47,10 +49,34 @@ class Element_Code extends Element {
 
 		$user_can_execute_code = Capabilities::current_user_can_execute_code();
 		if ( $user_can_execute_code ) {
+			$this->controls['infoExecuteCode'] = [
+				'tab'      => 'content',
+				'content'  => esc_html__( 'Important: The code above will run on your site! Only add code that you consider safe. Especially when executing PHP & JS code.', 'bricks' ),
+				'type'     => 'info',
+				'required' => [ 'executeCode', '!=', '' ],
+			];
+
 			$this->controls['executeCode'] = [
 				'tab'   => 'content',
 				'label' => esc_html__( 'Execute code', 'bricks' ),
 				'type'  => 'checkbox',
+			];
+
+			// @since 1.9.8
+			$this->controls['parseDynamicData'] = [
+				'tab'      => 'content',
+				'label'    => esc_html__( 'Parse dynamic data', 'bricks' ),
+				'type'     => 'checkbox',
+				'required' => [ 'executeCode', '!=', '' ],
+			];
+
+			// @since 1.9.8
+			$this->controls['supressPhpErrors'] = [
+				'tab'         => 'content',
+				'label'       => esc_html__( 'Suppress PHP errors', 'bricks' ),
+				'type'        => 'checkbox',
+				'description' => esc_html__( 'Add "brx_code_errors" as an URL parameter to show PHP errors if needed.', 'bricks' ),
+				'required'    => [ 'executeCode', '!=', '' ],
 			];
 
 			$this->controls['noRoot'] = [
@@ -59,13 +85,6 @@ class Element_Code extends Element {
 				'type'        => 'checkbox',
 				'description' => esc_html__( 'Render on the front-end without the div wrapper.', 'bricks' ),
 				'required'    => [ 'executeCode', '!=', '' ],
-			];
-
-			$this->controls['infoExecuteCode'] = [
-				'tab'      => 'content',
-				'content'  => esc_html__( 'Important: The code above will run on your site! Only add code that you consider safe. Especially when executing PHP & JS code.', 'bricks' ),
-				'type'     => 'info',
-				'required' => [ 'executeCode', '!=', '' ],
 			];
 		}
 
@@ -134,6 +153,11 @@ class Element_Code extends Element {
 				return $this->render_element_placeholder( [ 'title' => $code['error'] ], 'error' );
 			}
 
+			// Parse dynamic data (@since 1.9.8)
+			if ( ! empty( $settings['parseDynamicData'] ) ) {
+				$code = $this->render_dynamic_data( $code );
+			}
+
 			// Sets context on AJAX/REST API calls or when reloading the builder
 			if ( bricks_is_builder() || bricks_is_builder_call() ) {
 				global $post;
@@ -148,22 +172,21 @@ class Element_Code extends Element {
 			// Prepare & set error reporting
 			$error_reporting = error_reporting( E_ALL );
 			$display_errors  = ini_get( 'display_errors' );
-			ini_set( 'display_errors', 1 );
+
+			/**
+			 * Show PHP errors only if not suppressed
+			 *
+			 * brx_code_errors can force PHP errors to be shown.
+			 *
+			 * @since 1.9.8
+			 */
+			$show_php_errors = ! empty( $settings['supressPhpErrors'] ) && ! isset( $_GET['brx_code_errors'] ) ? 0 : 1;
+			ini_set( 'display_errors', $show_php_errors );
 
 			try {
 				$result = eval( ' ?>' . $code . '<?php ' );
-			} catch ( \Exception $error ) {
-				echo 'Exception: ' . $error->getMessage();
-
-				return;
-			} catch ( \ParseError $error ) {
-				echo 'ParseError: ' . $error->getMessage();
-
-				return;
-			} catch ( \Error $error ) {
-				echo 'Error: ' . $error->getMessage();
-
-				return;
+			} catch ( \Throwable $error ) {
+				$result = false;
 			}
 
 			// Reset error reporting
@@ -172,7 +195,12 @@ class Element_Code extends Element {
 
 			// @see https://www.php.net/manual/en/function.eval.php
 			if ( version_compare( PHP_VERSION, '7', '<' ) && $result === false || ! empty( $error ) ) {
-				$output = $error;
+				if ( ! $show_php_errors ) {
+					$output = '';
+				} else {
+					$error_type = get_class( $error ) ?? 'Error';
+					$output     = $error_type . ': ' . $error->getMessage();
+				}
 
 				ob_end_clean();
 			} else {

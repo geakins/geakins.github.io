@@ -201,19 +201,6 @@ $controls['lightboxSeparator'] = [
 	'description' => esc_html__( 'Set only width generates 16:9 ratio videos.', 'bricks' ),
 ];
 
-$controls['lightboxWidth'] = [
-	'type'        => 'number',
-	'label'       => esc_html__( 'Lightbox width', 'bricks' ) . ' (' . esc_html__( 'Video', 'bricks' ) . ')',
-	'placeholder' => 1280,
-];
-
-$controls['lightboxHeight'] = [
-	'type'        => 'number',
-	'label'       => esc_html__( 'Lightbox height', 'bricks' ) . ' (' . esc_html__( 'Video', 'bricks' ) . ')',
-	'placeholder' => 720,
-];
-
-
 $controls['lightboxBackground'] = [
 	'type'    => 'background',
 	'label'   => esc_html__( 'Lightbox background', 'bricks' ),
@@ -251,6 +238,18 @@ $controls['lightboxCloseSize'] = [
 			'selector' => '.pswp.brx .pswp__top-bar button.pswp__button svg',
 		],
 	],
+];
+
+$controls['lightboxWidth'] = [
+	'type'        => 'number',
+	'label'       => esc_html__( 'Width', 'bricks' ) . ' (' . esc_html__( 'Video', 'bricks' ) . ')',
+	'placeholder' => 1280,
+];
+
+$controls['lightboxHeight'] = [
+	'type'        => 'number',
+	'label'       => esc_html__( 'Height', 'bricks' ) . ' (' . esc_html__( 'Video', 'bricks' ) . ')',
+	'placeholder' => 720,
 ];
 
 return [

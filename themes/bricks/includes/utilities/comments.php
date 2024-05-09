@@ -116,9 +116,13 @@ function bricks_list_comments( $comment, $args, $depth ) {
  * @since 1.0
  */
 function bricks_comment_form_fields_order( $fields ) {
-	$comment_field = $fields['comment'];
-	unset( $fields['comment'] );
-	$fields['comment'] = $comment_field;
+	if ( isset( $fields['comment'] ) ) {
+		$comment_field = $fields['comment'];
+
+		unset( $fields['comment'] );
+
+		$fields['comment'] = $comment_field;
+	}
 
 	return $fields;
 }

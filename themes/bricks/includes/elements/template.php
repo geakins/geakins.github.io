@@ -69,6 +69,16 @@ class Element_Template extends Element {
 			);
 		}
 
+		// Performance improvement for AJAX popup (@since 1.9.8)
+		$template_type = Templates::get_template_type( $template_id );
+
+		if ( $template_type === 'popup' ) {
+			$popup_template_settings = Helpers::get_template_settings( $template_id );
+			if ( isset( $popup_template_settings['popupAjax'] ) && in_array( $template_id, Popups::$looping_ajax_popup_ids ) ) {
+				return;
+			}
+		}
+
 		// Avoid infinite loop
 		static $rendered_templates = [];
 
@@ -84,7 +94,7 @@ class Element_Template extends Element {
 			 *
 			 * If it's a builder call OR If 'noRoot' setting is not set (@since 1.8) && If template is not a popup template
 			 */
-			$render_root_div = bricks_is_builder_call() || ( ! isset( $settings['noRoot'] ) && Templates::get_template_type( $template_id ) !== 'popup' );
+			$render_root_div = bricks_is_builder_call() || ( ! isset( $settings['noRoot'] ) && $template_type !== 'popup' );
 
 			// Always render .brxe-template in builder (as we need a single root element in the Vue component)
 			if ( $render_root_div ) {

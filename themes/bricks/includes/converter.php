@@ -115,7 +115,7 @@ class Converter {
 
 				if ( isset( $converter_response['count'] ) && $converter_response['count'] > 0 ) {
 					$label            = esc_html__( 'Global classes', 'bricks' );
-					$updated[ $data ] = Helpers::save_global_classes_in_db( $converter_response['data'], 'run_converter' );
+					$updated[ $data ] = Helpers::save_global_classes_in_db( $converter_response['data'] );
 				}
 				break;
 

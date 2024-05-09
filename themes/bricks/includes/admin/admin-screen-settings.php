@@ -186,7 +186,7 @@ if ( $code_review ) {
 
 				// Add element code 'signature' results to $code_signature_results
 				$signature_type = $element['signature']['type'] ?? '';
-				if ( Helpers::code_signatures_enabled() && $signature_type ) {
+				if ( $signature_type ) {
 					$code_signature_results[ $signature_type ] += 1;
 					$code_signature_results['total']           += 1;
 				}
@@ -342,9 +342,14 @@ if ( $code_review ) {
 						<label for="misc_group"><?php esc_html_e( 'Miscellaneous', 'bricks' ); ?></label>
 					</th>
 					<td>
-					<div class="setting-wrapper">
+						<div class="setting-wrapper">
 							<input type="checkbox" name="disableClassManager" id="disableClassManager" <?php checked( isset( $settings['disableClassManager'] ) ); ?>>
 							<label for="disableClassManager"><?php esc_html_e( 'Disable global class manager', 'bricks' ); ?></label>
+						</div>
+
+						<div class="setting-wrapper">
+							<input type="checkbox" name="disableVariablesManager" id="disableVariablesManager" <?php checked( isset( $settings['disableVariablesManager'] ) ); ?>>
+							<label for="disableVariablesManager"><?php esc_html_e( 'Disable CSS variables manager', 'bricks' ); ?></label>
 						</div>
 
 						<div class="setting-wrapper">
@@ -1829,7 +1834,7 @@ if ( $code_review ) {
 												<div class="actions">
 													<?php
 													$signature = $element['signature'] ?? '';
-													if ( $signature && Helpers::code_signatures_enabled() ) {
+													if ( $signature ) {
 														echo '<button class="button button-secondary button-small type ' . sanitize_html_class( $signature['type'] ) . '">' . $signature['label'] . '</button>';
 													}
 
@@ -1858,7 +1863,7 @@ if ( $code_review ) {
 											<?php
 											// User who signed the code + datetime
 											$signature_meta = $element['signature']['meta'] ?? '';
-											if ( Helpers::code_signatures_enabled() && $signature_meta ) {
+											if ( $signature_meta ) {
 												echo '<div class="signature-meta">' . esc_html__( 'Code signed', 'bricks' ) . ': ' . $signature_meta . '</div>';
 											}
 											?>
@@ -1944,9 +1949,9 @@ if ( $code_review ) {
 
 						<div class="code-review-echo-tag-filter">
 							<h3 class="hero"><?php echo 'Echo: ' . esc_html__( 'Function names', 'bricks' ); ?></h3>
-							<p class="description"><?php printf( esc_html__( 'Only function names returned through the %s filter are allowed.', 'bricks' ), '<em>bricks/code/echo_function_names</em>' ); ?></p>
+							<p class="description"><?php printf( esc_html__( 'Function names must pass the check through the %s filter.', 'bricks' ), '<em>bricks/code/echo_function_names</em>' ); ?></p>
 							<p class="message info">
-								<?php echo esc_html__( 'Copy and paste the code below into your Bricks child theme to allow those functions to be called through the "echo" tag. Remove the function names you don\'t want to allow.', 'bricks' ); ?>
+								<?php printf( esc_html__( 'Copy and paste the code below into your Bricks child theme to allow those functions to be called through the "echo" tag. Remove the function names you don\'t want to allow. Explore the %s documentation for more code examples such as using regex for more flexible echo tag checks, etc.', 'bricks' ), '<a href="https://academy.bricksbuilder.io/article/filter-bricks-code-echo_function_names/" target="_blank">bricks/code/echo_function_names</a>' ); ?>
 							</p>
 
 							<code>
@@ -1957,6 +1962,9 @@ if ( $code_review ) {
 								// Output code for echo allowed function names filter
 								echo "add_filter( 'bricks/code/echo_function_names', function() {<br>";
 								echo '&nbsp;&nbsp;return [<br>';
+
+								// Sort function names
+								sort( $all_echo_tags );
 
 								foreach ( $all_echo_tags as $index => $tag ) {
 									$exists = function_exists( $tag ) ? '' : ' // function does not exist';
@@ -2035,15 +2043,11 @@ if ( $code_review ) {
 
 						<?php
 						// Individual users with code execution capabilities
-						$users_with_execute_code_cap = [];
-
-						foreach ( get_users() as $user ) {
-							$user_can = array_keys( $user->caps );
-
-							if ( in_array( Capabilities::EXECUTE_CODE, $user_can ) ) {
-								$users_with_execute_code_cap[] = $user;
-							}
-						}
+						$users_with_execute_code_cap = get_users(
+							[
+								'role' => Capabilities::EXECUTE_CODE,
+							]
+						);
 						?>
 						<div class="separator"></div>
 
@@ -2083,7 +2087,6 @@ if ( $code_review ) {
 					</th>
 
 					<td>
-						<?php if ( Helpers::code_signatures_enabled() ) { ?>
 						<p class="message info"><?php esc_html_e( 'Please create a full-site backup and perform a "Code review" (see above) before generating code signatures globally.', 'bricks' ); ?></p>
 
 							<?php
@@ -2102,21 +2105,15 @@ if ( $code_review ) {
 							<i class="dashicons dashicons-yes hide"></i>
 						</button>
 
-							<?php
-							// Show date & version of last code signatures regeneration
-							if ( $code_signatures_last_generated_timestamp ) {
-								// Timestamp to human-readable date
-								$human_time_diff                     = human_time_diff( $code_signatures_last_generated_timestamp, time() );
-								$code_signatures_last_generated_date = date( 'Y-m-d H:i:s', $code_signatures_last_generated_timestamp );
+						<?php
+						// Show date & version of last code signatures regeneration
+						if ( $code_signatures_last_generated_timestamp ) {
+							// Timestamp to human-readable date
+							$human_time_diff                     = human_time_diff( $code_signatures_last_generated_timestamp, time() );
+							$code_signatures_last_generated_date = date( 'Y-m-d H:i:s', $code_signatures_last_generated_timestamp );
 
-								// translators: %s = human-readable date
-								echo "<p class=\"description italic\" title=\"$code_signatures_last_generated_date\">" . esc_html__( 'Last generated', 'bricks' ) . ': ' . sprintf( esc_html__( '%s ago', 'bricks' ), $human_time_diff ) . ' (Bricks ' . $code_signatures_last_generated_version . ')</p>';
-							}
-							?>
-
-							<?php
-						} else {
-							echo '<p class="message error">' . sprintf( esc_html__( 'Code signature verification is currently disabled through the %s filter. Please only use this filter temporarily if you encounter issues with code signatures.', 'bricks' ), Helpers::article_link( 'filter/bricks-code-disable_signatures', 'bricks-code-disable_signatures' ) ) . '</p>';
+							// translators: %s = human-readable date
+							echo "<p class=\"description italic\" title=\"$code_signatures_last_generated_date\">" . esc_html__( 'Last generated', 'bricks' ) . ': ' . sprintf( esc_html__( '%s ago', 'bricks' ), $human_time_diff ) . ' (Bricks ' . $code_signatures_last_generated_version . ')</p>';
 						}
 						?>
 					</td>

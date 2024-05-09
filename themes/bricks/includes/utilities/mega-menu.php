@@ -84,10 +84,10 @@ function bricks_update_nav_menu_item( $menu_id, $menu_item_db_id ) {
 	}
 
 	// STEP: Save delete multivel (1) in postmeta of menu item
-	$mega_menu_template_id = isset( $_POST['bricks_multilevel'][ $menu_item_db_id ] ) ? intval( $_POST['bricks_multilevel'][ $menu_item_db_id ] ) : '';
+	$multi_level_value = isset( $_POST['bricks_multilevel'][ $menu_item_db_id ] ) ? sanitize_text_field( $_POST['bricks_multilevel'][ $menu_item_db_id ] ) : '';
 
 	// Save/delete mega menu template id in postmeta of menu item
-	if ( $mega_menu_template_id ) {
+	if ( $multi_level_value === 'on' ) {
 		update_post_meta( $menu_item_db_id, '_bricks_multilevel', true );
 	} else {
 		delete_post_meta( $menu_item_db_id, '_bricks_multilevel' );

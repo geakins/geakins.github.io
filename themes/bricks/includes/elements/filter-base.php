@@ -4,14 +4,15 @@ namespace Bricks;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class Filter_Element extends Element {
-	public $category          = 'filter';
-	public $input_name        = '';
-	public $filter_type       = '';
-	public $filtered_source   = [];
-	public $choices_source    = [];
-	public $data_source       = [];
-	public $populated_options = [];
-	public $page_filter_value = [];
+	public $category                   = 'filter';
+	public $input_name                 = '';
+	public $filter_type                = '';
+	public $filtered_source            = [];
+	public $choices_source             = [];
+	public $data_source                = [];
+	public $populated_options          = [];
+	public $page_filter_value          = [];
+	public $target_query_results_count = 0;
 
 	public function get_keywords() {
 		return [ 'input', 'form', 'field', 'filter' ];
@@ -49,6 +50,14 @@ class Filter_Element extends Element {
 	public function prepare_sources() {
 		// Get target query id
 		$query_id = $this->settings['filterQueryId'];
+
+		/**
+		 * Get target query results count to execute query at least once and saved in history.
+		 * Posts element needs this if filter element is targeting it.
+		 *
+		 * @since 1.9.8
+		 */
+		$this->target_query_results_count = Integrations\Dynamic_Data\Providers::render_tag( "{query_results_count:$query_id}", $this->post_id );
 
 		// Get filtered data from index
 		$this->filtered_source = Query_Filters::get_filtered_data_from_index( $this->id, Query_Filters::get_filter_object_ids( $query_id ) );
@@ -357,7 +366,7 @@ class Filter_Element extends Element {
 		$options             = [];
 		$filtered_source     = $this->filtered_source;
 		$data_source         = $this->data_source;
-		$query_results_count = Integrations\Dynamic_Data\Providers::render_tag( "{query_results_count:$query_id}", $this->post_id );
+		$query_results_count = $this->target_query_results_count;
 
 		// STEP: Hierarchical display logic
 		if ( $hierarchical && $filter_source === 'taxonomy' ) {
@@ -440,9 +449,11 @@ class Filter_Element extends Element {
 				$option['disabled'] = true;
 				$option['class']   .= ' brx-option-disabled';
 
-				// Add brx-option-empty class if hide empty is enabled
 				if ( $hide_empty ) {
-					$option['class'] .= ' brx-option-empty';
+					// skip to next option to avoid safari and empty <li> style issues (#86bxj43yg)
+					continue;
+					// Add brx-option-empty class if hide empty is enabled
+					// $option['class'] .= ' brx-option-empty';
 				}
 			}
 
@@ -803,7 +814,7 @@ class Filter_Element extends Element {
 					],
 					'css'      => [
 						[
-							'selector' => '[class^="depth-"]:not(.depth-0)',
+							'selector' => '[class*="depth-"]:not([class*="depth-0"])',
 							'property' => 'margin-inline-start',
 						],
 					],

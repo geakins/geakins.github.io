@@ -43,6 +43,18 @@ class Element_Image extends Element {
 		// Underscorce prefix to prevent conflict with user-created custom breakpoint
 		$breakpoint_options['_custom'] = esc_html__( 'Custom', 'bricks' ) . ' (' . esc_html__( 'Media query', 'bricks' ) . ')';
 
+		// Apply '_border' to figure.tag or img (@since 1.9.8)
+		$this->controls['_border']['css'] = [
+			[
+				'property' => 'border',
+				'selector' => '&:not(.tag)',
+			],
+			[
+				'property' => 'border',
+				'selector' => 'img',
+			],
+		];
+
 		// Apply CSS filters only to img tag
 		$this->controls['_cssFilters']['css'] = [
 			[
@@ -316,6 +328,7 @@ class Element_Image extends Element {
 			'type'   => 'separator',
 			'inline' => true,
 			'small'  => true,
+			'desc'   => esc_html__( 'Only rendered if link is set.', 'bricks' ),
 		];
 
 		// To hide icon for specific elements when image icon set in theme styles

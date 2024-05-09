@@ -125,14 +125,23 @@ class Polylang {
 	 * @since 1.9.4
 	 */
 	public function modify_search_form_home_url( $url ) {
-		if ( function_exists( 'pll_home_url' ) ) {
-			return pll_home_url();
+		// Check if Polylang is active
+		if ( function_exists( 'pll_current_language' ) ) {
+			// Get the current language slug
+			$current_lang_slug = pll_current_language( 'slug' );
+
+			// Append the language slug to the base home URL (if it's not the default language)
+			$default_lang = pll_default_language( 'slug' );
+			if ( $current_lang_slug !== $default_lang ) {
+				return trailingslashit( home_url() ) . $current_lang_slug;
+			}
 		}
 
+		// Return the original URL if Polylang is not active or if it's the default language
 		return $url;
 	}
 
-	/*
+	/**
 	 * Add language code to post title
 	 *
 	 * @param string $title   The original title of the page.
@@ -142,6 +151,8 @@ class Polylang {
 	 * @since 1.9.4
 	 */
 	public function add_langugage_to_post_title( $title, $page_id ) {
+		\Bricks\Ajax::verify_nonce( 'bricks-nonce-builder' );
+
 		if ( isset( $_GET['addLanguageToPostTitle'] ) ) {
 			$language_code = function_exists( 'pll_get_post_language' ) ? strtoupper( pll_get_post_language( $page_id ) ) : '';
 

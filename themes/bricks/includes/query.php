@@ -4,78 +4,46 @@ namespace Bricks;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class Query {
-	/**
-	 * The query unique ID
-	 */
+	// The query unique ID
 	private $id = '';
 
-	/**
-	 * Element ID
-	 */
+	// Element ID
 	public $element_id = '';
 
-	/**
-	 * Element settings
-	 */
+	// Element settings
 	public $settings = [];
 
-	/**
-	 * Query vars
-	 */
+	// Query vars
 	public $query_vars = [];
 
-	/**
-	 * Type of object queried: 'post', 'term', 'user'
-	 */
+	// Type of object queried: 'post', 'term', 'user'
 	public $object_type = 'post';
 
-	/**
-	 * Query result (WP_Posts | WP_Term_Query | WP_User_Query | Other)
-	 */
+	// Query result (WP_Posts | WP_Term_Query | WP_User_Query | Other)
 	public $query_result;
 
-	/**
-	 * Query results total
-	 */
+	// Query results total
 	public $count = 0;
 
-	/**
-	 * Query results total pages
-	 */
+	// Query results total pages
 	public $max_num_pages = 1;
 
-	/**
-	 * Is looping
-	 *
-	 * @var boolean
-	 */
+	// Is looping
 	public $is_looping = false;
 
-	/**
-	 * When looping, keep the iteration index
-	 */
+	// When looping, keep the iteration index
 	public $loop_index = 0;
 
-	/**
-	 * When looping, keep the object
-	 */
+	// When looping, keep the object
 	public $loop_object = null;
 
-	/**
-	 * Store the original post before looping to restore the context (nested loops)
-	 */
+	// Store the original post before looping to restore the context (nested loops)
 	private $original_post_id = 0;
 
-	/**
-	 * Cache key
-	 */
+	// Cache key
 	private $cache_key = false;
 
-	/**
-	 * Store query history (including those destroyed)
-	 *
-	 * @since 1.9.1
-	 */
+	// Store query history (including those destroyed)
 	public static $query_history = [];
 
 	/**
@@ -402,17 +370,22 @@ class Query {
 				ob_get_clean();
 			}
 
+			$object_type = empty( $object_type ) ? 'post' : $object_type;
+
 			if ( ! empty( $php_query ) && is_array( $php_query ) ) {
 				$query_vars          = array_merge( $query_vars, $php_query );
 				$query_vars['paged'] = self::get_paged_query_var( $query_vars );
+
+				if ( $object_type === 'term' ) {
+					// Handle term pagination (#86bwwav1e)
+					$query_vars = self::get_term_pagination_query_var( $query_vars );
+				}
 			}
 
 			/**
 			 * php Editor not triggering query_vars, new query filters unable to merge query_vars (@since 1.9.6)
-			 * should we go through the switch statement? Otherwise pagination will not work or need to write offset, page logic in the php editor (#86bwwav1e)
 			 */
-			$object_type = empty( $object_type ) ? 'post' : $object_type;
-			$query_vars  = apply_filters( "bricks/{$object_type}s/query_vars", $query_vars, $settings, $element_id );
+			$query_vars = apply_filters( "bricks/{$object_type}s/query_vars", $query_vars, $settings, $element_id );
 
 			return $query_vars;
 		}
@@ -556,16 +529,8 @@ class Query {
 				// Paged - set the paged key to the correct value (#86bwqwa31)
 				$query_vars['paged'] = self::get_paged_query_var( $query_vars );
 
-				// Pagination: Fix the offset value (@since 1.5)
-				$offset = ! empty( $query_vars['offset'] ) ? $query_vars['offset'] : 0;
-
-				// Store the original offset value (@since 1.9.1)
-				$query_vars['original_offset'] = $offset;
-
-				// If pagination exists, and number is limited (!= 0), use $offset as the pagination trigger
-				if ( $query_vars['paged'] !== 1 && ! empty( $query_vars['number'] ) ) {
-					$query_vars['offset'] = ( $query_vars['paged'] - 1 ) * $query_vars['number'] + $offset;
-				}
+				// Handle term pagination (#86bwwav1e)
+				$query_vars = self::get_term_pagination_query_var( $query_vars );
 
 				// Hide empty
 				if ( isset( $query_vars['show_empty'] ) ) {
@@ -806,12 +771,7 @@ class Query {
 			add_action( 'pre_get_posts', [ $this, 'set_pagination_with_offset' ], 5 );
 			add_filter( 'found_posts', [ $this, 'fix_found_posts_with_offset' ], 5, 2 );
 
-			/**
-			 * Use random seed when: 'orderby' is 'rand' && 'randomSeedTtl' > 0
-			 *
-			 * Default: 60 minutes
-			 */
-			$use_random_seed = isset( $this->query_vars['orderby'] ) && $this->query_vars['orderby'] === 'rand' && ! ( isset( $this->settings['query']['randomSeedTtl'] ) && absint( $this->settings['query']['randomSeedTtl'] ) === 0 );
+			$use_random_seed = self::use_random_seed( $this->query_vars );
 
 			// @since 1.7.1 - Avoid duplicate posts when using 'rand' orderby
 			if ( $use_random_seed ) {
@@ -914,7 +874,9 @@ class Query {
 		}
 
 		foreach ( $query_vars['meta_query'] as $key => $query_item ) {
-			unset( $query_vars['meta_query'][ $key ]['id'] );
+			if ( isset( $query_vars['meta_query'][ $key ]['id'] ) ) {
+				unset( $query_vars['meta_query'][ $key ]['id'] );
+			}
 
 			if ( empty( $query_vars['meta_query'][ $key ]['value'] ) ) {
 				continue;
@@ -1071,6 +1033,26 @@ class Query {
 	}
 
 	/**
+	 * Handle term pagination
+	 *
+	 * @since 1.9.8
+	 */
+	public static function get_term_pagination_query_var( $query_vars ) {
+		// Pagination: Fix the offset value
+		$offset = ! empty( $query_vars['offset'] ) ? $query_vars['offset'] : 0;
+
+		// Store the original offset value
+		$query_vars['original_offset'] = $offset;
+
+		// If pagination exists, and number is limited (!= 0), use $offset as the pagination trigger
+		if ( isset( $query_vars['paged'] ) && $query_vars['paged'] !== 1 && ! empty( $query_vars['number'] ) ) {
+			$query_vars['offset'] = ( $query_vars['paged'] - 1 ) * $query_vars['number'] + $offset;
+		}
+
+		return $query_vars;
+	}
+
+	/**
 	 * By default, WordPress includes offset posts into the final post count.
 	 * This method excludes them.
 	 *
@@ -1151,10 +1133,8 @@ class Query {
 
 		// Iterate
 		else {
-
 			// STEP: Loop posts
 			if ( $this->object_type == 'post' ) {
-
 				$this->original_post_id = get_the_ID();
 
 				while ( $query_result->have_posts() ) {
@@ -1540,11 +1520,34 @@ class Query {
 				$content = do_shortcode( '[bricks_template id="' . $template_id . '"]' );
 			} else {
 				$content = bricks_render_dynamic_data( $text );
-				$content = do_shortcode( $content ); // It was here @pre1.9.6
+				$content = do_shortcode( $content );
 			}
 
-			// Must wrap content inside .bricks-posts-nothing-found to target via JS
-			$content = '<div class="bricks-posts-nothing-found" style="width: inherit; max-width: 100%; grid-column: 1/-1">' . $content . '</div>';
+			/**
+			 * Use custom HTML tag if set
+			 *
+			 * Must wrap content inside .bricks-posts-nothing-found to target via JavaScript.
+			 *
+			 * @since 1.9.8
+			 */
+			$tag        = $this->settings['tag'] ?? 'div';
+			$custom_tag = $this->settings['customTag'] ?? '';
+			$final_tag  = $tag === 'custom' && $custom_tag ? esc_html( $custom_tag ) : esc_html( $tag );
+			$wrapper    = "<$final_tag" . ' class="bricks-posts-nothing-found" style="width: inherit; max-width: 100%; grid-column: 1/-1">';
+
+			// Special case for table row
+			if ( $final_tag === 'tr' ) {
+				$wrapper .= '<td colspan="100%">';
+			}
+
+			$content = $wrapper . $content;
+
+			// Special case for table row
+			if ( $final_tag === 'tr' ) {
+				$content .= '</td>';
+			}
+
+			$content .= "</$final_tag>";
 
 			// Inline styles needed if query result via AJAX is empty and using a template
 			if ( Api::is_current_endpoint( 'query_result' ) && $template_id ) {
@@ -1562,6 +1565,49 @@ class Query {
 	}
 
 	/**
+	 * Check if the query is using random seed
+	 * Use random seed when: 'orderby' is 'rand' && 'randomSeedTtl' > 0
+	 * Default: 60 minutes
+	 *
+	 * @param array $query_vars
+	 * @return boolean
+	 * @since 1.9.8
+	 */
+	public static function use_random_seed( $query_vars = [] ) {
+		return isset( $query_vars['orderby'] ) && $query_vars['orderby'] === 'rand' && ! ( isset( $query_vars['randomSeedTtl'] ) && absint( $query_vars['randomSeedTtl'] ) === 0 );
+	}
+
+	/**
+	 * Get the random seed statement for the query
+	 *
+	 * @param string $element_id
+	 * @param array  $query_vars
+	 * @return string
+	 * @since 1.9.8
+	 */
+	public static function get_random_seed_statement( $element_id = '', $query_vars = [] ) {
+		if ( empty( $element_id ) || ! isset( $query_vars['orderby'] ) || $query_vars['orderby'] !== 'rand' ) {
+			return '';
+		}
+
+		// Transient name is based on the element ID
+		$transient_name = "bricks_query_loop_random_seed_{$element_id}";
+		$random_seed    = get_transient( $transient_name );
+
+		if ( ! $random_seed ) {
+			// Generate a random seed for this query
+			$random_seed = rand( 0, 99999 );
+
+			// Default transient TTL is 60 minutes
+			$random_seed_ttl = ! empty( $query_vars['randomSeedTtl'] ) ? absint( $query_vars['randomSeedTtl'] ) : 60;
+
+			set_transient( $transient_name, $random_seed, $random_seed_ttl * MINUTE_IN_SECONDS );
+		}
+
+		return 'RAND(' . $random_seed . ')';
+	}
+
+	/**
 	 * Use random seed to make sure the order is the same for all queries of the same element
 	 *
 	 * The transient is also deleted when the random seed setting inside the query loop control is changed.
@@ -1571,21 +1617,11 @@ class Query {
 	 * @since 1.7.1
 	 */
 	public function set_bricks_query_loop_random_order_seed( $order_statement ) {
-		// Transient name is based on the element ID
-		$transient_name = "bricks_query_loop_random_seed_{$this->element_id}";
-		$random_seed    = get_transient( $transient_name );
+		$random_seed_statement = self::get_random_seed_statement( $this->element_id, $this->query_vars );
 
-		if ( ! $random_seed ) {
-			// Generate a random seed for this query
-			$random_seed = rand( 0, 99999 );
-
-			// Default transient TTL is 60 minutes
-			$random_seed_ttl = ! empty( $this->settings['query']['randomSeedTtl'] ) ? absint( $this->settings['query']['randomSeedTtl'] ) : 60;
-
-			set_transient( $transient_name, $random_seed, $random_seed_ttl * MINUTE_IN_SECONDS );
+		if ( ! empty( $random_seed_statement ) ) {
+			return $random_seed_statement;
 		}
-
-		$order_statement = 'RAND(' . $random_seed . ')';
 
 		return $order_statement;
 	}
@@ -1667,6 +1703,7 @@ class Query {
 			'comment_count',
 			'comment_status',
 			'post_comment_status',
+			'tax_query', // @since 1.9.8 (#86by08fg0)
 		];
 
 		// NOTE: Undocumented
@@ -1715,12 +1752,16 @@ class Query {
 				}
 
 				/**
-				 *  NOTE: meta_query should be merged without checking the key.
-				 *  Otherwise multiple meta_query with different comparison operators will not work and always merge into one.
+				 * Handle special case for 'meta_query'
+				 *
+				 * This logic is still needed for 'meta_query' to work correctly.
+				 * Otherwise will merge wrongly into wrong array when performing query filter.
+				 *
+				 * @since 1.9.8
 				 */
-				// elseif ( $key === 'meta_query' ) {
-				// $original_query_vars[ $key ] = self::merge_tax_or_meta_query_vars( $original_query_vars[ $key ], $value, 'meta' );
-				// }
+				elseif ( $key === 'meta_query' && Api::is_current_endpoint( 'query_result' ) ) {
+					$original_query_vars[ $key ] = self::merge_tax_or_meta_query_vars( $original_query_vars[ $key ], $value, 'meta' );
+				}
 
 				else {
 					$original_query_vars[ $key ] = self::merge_query_vars( $original_query_vars[ $key ], $value ); // Recursively merge arrays (@since 1.9.6)
@@ -1751,30 +1792,58 @@ class Query {
 			$found = false;
 
 			foreach ( $original_tax_query as &$original_tax_query_item ) { // Use reference to modify original array
-				if ( isset( $original_tax_query_item[ $target_key ] ) && isset( $merging_tax_query_item[ $target_key ] ) && $original_tax_query_item[ $target_key ] === $merging_tax_query_item[ $target_key ] ) {
-					$found = true;
+				if ( $type === 'meta' ) {
+					/**
+					 * Meta merge logic
+					 *
+					 * Only merge if the 'key' is identical && 'compare' is identical.
+					 *
+					 * @since 1.9.8
+					 */
+					if ( isset( $original_tax_query_item[ $target_key ] ) &&
+						isset( $merging_tax_query_item[ $target_key ] ) &&
+						$original_tax_query_item[ $target_key ] === $merging_tax_query_item[ $target_key ] &&
+						isset( $original_tax_query_item['compare'] ) &&
+						isset( $merging_tax_query_item['compare'] ) &&
+						$original_tax_query_item['compare'] === $merging_tax_query_item['compare']
+					) {
+						$found = true;
 
-					// Convert terms to array if it's not already
-					if ( isset( $original_tax_query_item['terms'] ) && ! is_array( $original_tax_query_item['terms'] ) ) {
-						$original_tax_query_item['terms'] = [ $original_tax_query_item['terms'] ];
+						// Merge the rest of the properties
+						$original_tax_query_item = self::merge_query_vars( $original_tax_query_item, $merging_tax_query_item );
 					}
-					if ( isset( $merging_tax_query_item['terms'] ) && ! is_array( $merging_tax_query_item['terms'] ) ) {
-						$merging_tax_query_item['terms'] = [ $merging_tax_query_item['terms'] ];
+				}
+
+				elseif ( $type === 'tax' ) {
+					// Taxonomy merge logic
+					if ( isset( $original_tax_query_item[ $target_key ] ) &&
+						isset( $merging_tax_query_item[ $target_key ] ) &&
+						$original_tax_query_item[ $target_key ] === $merging_tax_query_item[ $target_key ]
+					) {
+						$found = true;
+
+						// Convert terms to array if it's not already
+						if ( isset( $original_tax_query_item['terms'] ) && ! is_array( $original_tax_query_item['terms'] ) ) {
+							$original_tax_query_item['terms'] = [ $original_tax_query_item['terms'] ];
+						}
+						if ( isset( $merging_tax_query_item['terms'] ) && ! is_array( $merging_tax_query_item['terms'] ) ) {
+							$merging_tax_query_item['terms'] = [ $merging_tax_query_item['terms'] ];
+						}
+
+						// Merge terms if they exist in both original and merging items
+						if ( isset( $original_tax_query_item['terms'] ) && isset( $merging_tax_query_item['terms'] ) ) {
+							$original_tax_query_item['terms'] = array_merge( $original_tax_query_item['terms'], $merging_tax_query_item['terms'] );
+						} else {
+							// If one of the items doesn't have terms, just copy the terms from the merging item
+							$original_tax_query_item['terms'] = isset( $merging_tax_query_item['terms'] ) ? $merging_tax_query_item['terms'] : $original_tax_query_item['terms'];
+						}
+
+						// Remove the operator if it's already set in the original item
+						unset( $merging_tax_query_item['operator'] );
+
+						// Merge the rest of the properties
+						$original_tax_query_item = self::merge_query_vars( $original_tax_query_item, $merging_tax_query_item );
 					}
-
-					// Merge terms if they exist in both original and merging items
-					if ( isset( $original_tax_query_item['terms'] ) && isset( $merging_tax_query_item['terms'] ) ) {
-						$original_tax_query_item['terms'] = array_merge( $original_tax_query_item['terms'], $merging_tax_query_item['terms'] );
-					} else {
-						// If one of the items doesn't have terms, just copy the terms from the merging item
-						$original_tax_query_item['terms'] = isset( $merging_tax_query_item['terms'] ) ? $merging_tax_query_item['terms'] : $original_tax_query_item['terms'];
-					}
-
-					// Remove the operator if it's already set in the original item
-					unset( $merging_tax_query_item['operator'] );
-
-					// Merge the rest of the properties
-					$original_tax_query_item = self::merge_query_vars( $original_tax_query_item, $merging_tax_query_item );
 				}
 			}
 
@@ -1785,5 +1854,4 @@ class Query {
 
 		return $original_tax_query;
 	}
-
 }

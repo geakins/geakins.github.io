@@ -120,7 +120,7 @@ class Filter_Select extends Filter_Element {
 	}
 
 	private function set_options_placeholder() {
-		$user_placeholder = $this->settings['placeholder'] ?? '';
+		$user_placeholder = ! empty( $this->settings['placeholder'] ) ? $this->render_dynamic_data( $this->settings['placeholder'] ) : '';
 
 		// Add placeholder option
 		if ( ! empty( $user_placeholder ) ) {

@@ -18,6 +18,10 @@ class Woocommerce {
 			return;
 		}
 
+		add_filter( 'woocommerce_show_admin_notice', [ $this, 'show_admin_notice' ], 10, 2 );
+
+		add_action( 'admin_notices', [ $this, 'admin_notice_outdated_template_files' ] );
+
 		add_action( 'after_setup_theme', [ $this, 'add_theme_support' ] );
 
 		add_action( 'init', [ $this, 'set_products_terms' ] );
@@ -150,6 +154,60 @@ class Woocommerce {
 		add_filter( 'bricks/builder/dynamic_wrapper', [ $this, 'builder_dynamic_wrapper' ] );
 
 		add_action( 'template_redirect', [ $this, 'template_redirect' ] );
+	}
+
+	/**
+	 * Dont't show WooCommerce outdated template files admin notice
+	 *
+	 * Show custom Bricks message instead.
+	 *
+	 * @since 1.9.8
+	 */
+	public function show_admin_notice( $true, $notice ) {
+		if ( $notice === 'template_files' ) {
+			return false;
+		}
+
+		return $true;
+	}
+
+	/**
+	 * Show custom message for outdated WooCommerce template files
+	 *
+	 * @since 1.9.8
+	 */
+	public function admin_notice_outdated_template_files() {
+		// Check: Has WooCommerce outdated template files
+		ob_start();
+		\WC_Admin_Notices::template_file_check_notice();
+		$outdated_template_files = ob_get_clean();
+
+		// Show custom message for outdated WooCommerce template files
+		$notices = \WC_Admin_Notices::get_notices();
+
+		if ( is_array( $notices ) && in_array( 'template_files', $notices ) ) {
+			$theme = wp_get_theme();
+			?>
+		<div class="notice notice-info">
+			<p>
+				<?php /* translators: %s: theme name */ ?>
+				<strong><?php printf( __( 'Your theme (%s) contains outdated copies of some WooCommerce template files.', 'bricks' ), esc_html( $theme['Name'] ) ); ?></strong>
+			</p>
+
+			<p>
+				<?php /* translators: %1$s: theme name */ ?>
+				<?php printf( __( 'Notice from %1$s: But don\'t worry. %1$s regularly updates all WooCommerce template files with each new release. If you are on the latest version and see this message, any necessary compatibility enhancements will be included in the next update.', 'bricks' ), esc_html( $theme['Name'] ) ); ?>
+			</p>
+
+			<p>
+				<a class="button-primary" href="https://woocommerce.com/document/template-structure/" target="_blank"><?php esc_html_e( 'Learn more about templates', 'woocommerce' ); ?></a>
+				<a class="button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=wc-status' ) ); ?>" target="_blank"><?php esc_html_e( 'View affected templates', 'woocommerce' ); ?></a>
+			</p>
+
+			<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'wc-hide-notice', 'template_files' ), 'woocommerce_hide_notices_nonce', '_wc_notice_nonce' ) ); ?>"><?php esc_html_e( 'Dismiss', 'woocommerce' ); ?></a>
+		</div>
+			<?php
+		}
 	}
 
 	/**

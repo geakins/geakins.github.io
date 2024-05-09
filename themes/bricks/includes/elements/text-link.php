@@ -41,6 +41,11 @@ class Element_Text_Link extends Element {
 			'group' => 'icon',
 			'label' => esc_html__( 'Icon', 'bricks' ),
 			'type'  => 'icon',
+			'css'   => [
+				[
+					'selector' => '.icon > svg', // Needs to be more specific than Dropdown > SVG (@since 1.9.8)
+				],
+			],
 		];
 
 		$this->controls['iconSize'] = [

@@ -1667,12 +1667,22 @@ class Element_Nav_Menu extends Element {
 	public function render() {
 		$settings = $this->settings;
 
-		// Get menu (term ID)
-		$menu                    = ! empty( $settings['menu'] ) ? $settings['menu'] : '';
+		// Get menu (ID)
+		$menu = $settings['menu'] ?? '';
+
+		/**
+		 * Bricks filter to apply nav menu programmatically
+		 *
+		 * https://developer.wordpress.org/reference/functions/wp_get_nav_menu_items/
+		 *
+		 * @since 1.9.8
+		 */
+		$menu = apply_filters( 'bricks/nav_menu/menu', $menu, $this->post_id, $this->element );
+
 		$this->wp_nav_menu_items = wp_get_nav_menu_items( $menu );
 
 		// STEP: Check: Nav menu is inside dropdown content (@since 1.8)
-		$parent_id                  = ! empty( $this->element['parent'] ) ? $this->element['parent'] : false;
+		$parent_id                  = $this->element['parent'] ?? false;
 		$parent_element             = $parent_id && ! empty( Frontend::$elements[ $parent_id ] ) ? Frontend::$elements[ $parent_id ] : false;
 		$parent_element_classes     = $parent_element && ! empty( $parent_element['settings']['_hidden']['_cssClasses'] ) ? $parent_element['settings']['_hidden']['_cssClasses'] : '';
 		$builder_is_inside_dropdown = isset( $this->element['insideDropdown'] );

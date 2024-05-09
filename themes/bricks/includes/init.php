@@ -34,6 +34,7 @@ class Theme {
 	public $polylang;
 	public $integrations_form;
 	public $wpml;
+	public $instagram;
 	public $builder;
 	public $frontend;
 
@@ -119,6 +120,7 @@ class Theme {
 		$this->integrations_form = new Integrations\Form\Init();
 		$this->polylang          = new Integrations\Polylang\Polylang();
 		$this->wpml              = new Integrations\Wpml\Wpml();
+		$this->instagram         = new Integrations\Instagram\Instagram();
 
 		if ( is_admin() ) {
 			$this->admin     = new Admin();

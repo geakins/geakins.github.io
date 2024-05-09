@@ -47,14 +47,16 @@ class Element_Svg extends Element {
 		$user_can_execute_code = Capabilities::current_user_can_execute_code();
 		if ( $user_can_execute_code ) {
 			$this->controls['code'] = [
-				'label'       => esc_html__( 'Code', 'bricks' ),
-				'type'        => 'code',
-				'executeCode' => true,
-				'desc'        => sprintf(
+				'label'        => esc_html__( 'Code', 'bricks' ),
+				'type'         => 'code',
+				'mode'         => 'xml',
+				'executeCode'  => true,
+				'hasVariables' => false,
+				'desc'         => sprintf(
 					esc_html__( 'Please ensure that the SVG code you paste in here does not contain any potentially malicious code. You can run it first through a free online SVG cleaner like %s', 'bricks' ),
 					'<a href="https://svgomg.net/" target="_blank">https://svgomg.net/</a>'
 				),
-				'required'    => [ 'source', '=', 'code' ],
+				'required'     => [ 'source', '=', 'code' ],
 			];
 		}
 

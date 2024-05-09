@@ -12,19 +12,9 @@ class Heartbeat {
 	 * https://developer.wordpress.org/plugins/javascript/heartbeat-api/
 	 */
 	public function __construct() {
-		// Don't run on non-builder frontend (bricks_is_builder check in init.php not working)
-		if ( ! is_admin() && ! isset( $_GET[ BRICKS_BUILDER_PARAM ] ) ) {
-			return;
-		}
-
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
-
-		// Add login form to page
-		add_action( 'wp_print_footer_scripts', 'wp_auth_check_html', 5 );
-
 		add_filter( 'heartbeat_settings', [ $this, 'heartbeat_settings' ] );
 		add_filter( 'heartbeat_received', [ $this, 'heartbeat_received' ], 10, 2 );
-
 		add_filter( 'wp_refresh_nonces', [ $this, 'refresh_nonces' ], 30, 2 );
 	}
 
@@ -34,6 +24,10 @@ class Heartbeat {
 	 * @since 1.0
 	 */
 	public function enqueue_scripts() {
+		if ( ! bricks_is_builder() ) {
+			return;
+		}
+
 		// Interim login form via WP Heartbeat API
 		wp_enqueue_script( 'heartbeat' );
 		wp_enqueue_script( 'wp_auth_check', '/wp-includes/js/wp-auth-check.js', [ 'heartbeat' ], false, 1 );
@@ -57,7 +51,9 @@ class Heartbeat {
 	 * @param array $settings Heartbeat settings.
 	 */
 	public function heartbeat_settings( $settings ) {
-		$settings['interval'] = BRICKS_AUTH_CHECK_INTERVAL; // Default: 15
+		if ( isset( $_GET[ BRICKS_BUILDER_PARAM ] ) ) {
+			$settings['interval'] = BRICKS_AUTH_CHECK_INTERVAL; // Default: 15
+		}
 
 		return $settings;
 	}

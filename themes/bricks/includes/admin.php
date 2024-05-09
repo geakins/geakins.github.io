@@ -70,31 +70,15 @@ class Admin {
 
 		// Instagram access token
 		add_action( 'wp_ajax_bricks_dismiss_instagram_access_token_notice', [ $this, 'dismiss_instagram_access_token_notice' ] );
-		add_action( 'admin_init', [ $this, 'schedule_instagram_access_token_refresh' ] );
-		add_action( 'bricks_refresh_instagram_access_token', [ $this, 'refresh_instagram_access_token' ] );
-		add_filter( 'cron_schedules', [ $this, 'monthly_cron_schedule' ] );
 
 		// Reindex query filters records (@since 1.9.6)
 		add_action( 'wp_ajax_bricks_reindex_query_filters', [ $this, 'reindex_query_filters' ] );
 
 		// Regenerate code signatures (@since 1.9.7)
 		add_action( 'wp_ajax_bricks_regenerate_code_signatures', [ $this, 'regenerate_code_signatures' ] );
-	}
 
-	/**
-	 * Set monthly cron schedule
-	 *
-	 * For Instagram Access Token.
-	 *
-	 * @since 1.9.1
-	 */
-	public function monthly_cron_schedule( $schedules ) {
-		$schedules['monthly'] = [
-			'interval' => 30 * DAY_IN_SECONDS,
-			'display'  => __( 'Once Monthly' ),
-		];
-
-		return $schedules;
+		// Bricks duplicate content action (@since 1.9.8)
+		add_action( 'admin_action_bricks_duplicate_content', [ $this, 'bricks_duplicate_content' ] );
 	}
 
 	/**
@@ -1224,6 +1208,10 @@ class Admin {
 	 * @since 1.9.7
 	 */
 	public static function admin_notice_code_signatures() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		// Add option table entry to not show hide this message
 		if ( isset( $_GET['code-sig-notice-off'] ) ) {
 			update_option( BRICKS_CODE_SIGNATURES_ADMIN_NOTICE, true );
@@ -1555,6 +1543,23 @@ class Admin {
 	 * @since 1.0
 	 */
 	public function row_actions( $actions, $post ) {
+		/**
+		 * Add "Duplicate with Bricks" link to post row actions
+		 *
+		 * - Only for users with 'edit_posts' capability
+		 * - Shouldn't restricted to Bricks data posts only then this will force user use another plugin to clone non-Bricks posts
+		 *
+		 * @since 1.9.8
+		*/
+		if ( current_user_can( self::EDITING_CAP ) ) {
+			$builder_mode             = Helpers::get_editor_mode( $post->ID ) === 'bricks' ? ' (Bricks)' : ' (WordPress)';
+			$actions['brx_duplicate'] = sprintf(
+				'<a class="bricks-duplicate" href="%s">%s</a>',
+				wp_nonce_url( admin_url( 'admin.php?action=bricks_duplicate_content&post_id=' . $post->ID ), 'bricks-nonce-admin' ),
+				esc_html__( 'Duplicate', 'bricks' ) . $builder_mode
+			);
+		}
+
 		if ( Helpers::is_post_type_supported() && Capabilities::current_user_can_use_builder( $post->ID ) ) {
 			// Export template
 			if ( get_post_type() === BRICKS_DB_TEMPLATE_SLUG ) {
@@ -1671,81 +1676,6 @@ class Admin {
 			wp_send_json_success( [ 'message' => esc_html__( 'Form submissions deleted.', 'bricks' ) ] );
 		} else {
 			wp_send_json_error( [ 'message' => esc_html__( 'Form submissions could not be deleted.', 'bricks' ) ] );
-		}
-	}
-
-	/**
-	 * Maybe schedule monthly cron job to refresh Instagram access token
-	 *
-	 * @since 1.9.1
-	 */
-	public function schedule_instagram_access_token_refresh() {
-		if ( Database::get_setting( 'instagramAccessToken', false ) && ! wp_next_scheduled( 'bricks_refresh_instagram_access_token' ) ) {
-			wp_schedule_event( time(), 'monthly', 'bricks_refresh_instagram_access_token' );
-		}
-	}
-
-	/**
-	 * Refresh Instagram access token
-	 *
-	 * @since 1.9.1
-	 */
-	public static function refresh_instagram_access_token() {
-		// Get the existing access token from the database
-		$instagram_access_token = Database::get_setting( 'instagramAccessToken', false );
-
-		if ( ! $instagram_access_token ) {
-			return;
-		}
-
-		// The URL to refresh the access token
-		$refresh_url = "https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token={$instagram_access_token}";
-
-		// Make a request to the Instagram API to refresh the token
-		$response = wp_remote_get( $refresh_url );
-
-		if ( is_wp_error( $response ) ) {
-			// Check if the notice has been dismissed
-			if ( ! get_option( 'bricks_instagram_access_token_notice_dismissed', false ) ) {
-				// Log the WP error
-				self::show_admin_notice( 'Instagram access token refresh failed: ' . $response->get_error_message(), 'error', 'brxe-instagram-token-notice' );
-			}
-
-			return;
-		}
-
-		if ( wp_remote_retrieve_response_code( $response ) != 200 ) {
-			// Check if the notice has been dismissed
-			if ( ! get_option( 'bricks_instagram_access_token_notice_dismissed', false ) ) {
-				// Log the non-200 response code
-				self::show_admin_notice( 'Instagram access token refresh failed: Unexpected response from Instagram API.', 'error', 'brxe-instagram-token-notice' );
-			}
-
-			return;
-		}
-
-		/**
-		 * Decode the response body & save the new access token in the database
-		 *
-		 * Might get the same token back if you refresh a token way before its expiry.
-		 */
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( isset( $body['access_token'] ) ) {
-			// Get global settings
-			$global_settings = get_option( BRICKS_DB_GLOBAL_SETTINGS );
-
-			// Update the instagramAccessToken in the settings array
-			$global_settings['instagramAccessToken'] = $body['access_token'];
-
-			// Save updated global settings in database
-			update_option( BRICKS_DB_GLOBAL_SETTINGS, $global_settings );
-		} else {
-			// Check if the notice has been dismissed
-			if ( ! get_option( 'bricks_instagram_access_token_notice_dismissed', false ) ) {
-				// Log the error (failed to get new access token)
-				self::show_admin_notice( 'Instagram access token refresh failed: Unable to retrieve new access token from API response.', 'error', 'brxe-instagram-token-notice' );
-			}
 		}
 	}
 
@@ -2017,5 +1947,144 @@ class Admin {
 		}
 
 		return $elements;
+	}
+
+	/**
+	 * Duplicate page or post in WP admin (Bricks or WordPress)
+	 *
+	 * @since 1.9.8
+	 */
+	public function bricks_duplicate_content() {
+		// Check standard WP edit_posts capability
+		if ( ! current_user_can( self::EDITING_CAP ) ) {
+			wp_send_json_error( [ 'message' => esc_html__( 'Not allowed', 'bricks' ) ] );
+		}
+
+		// Check nonce
+		Ajax::verify_nonce( 'bricks-nonce-admin' );
+
+		// Return: Wrong action
+		$action = isset( $_REQUEST['action'] ) ? sanitize_text_field( $_REQUEST['action'] ) : '';
+
+		if ( $action !== 'bricks_duplicate_content' ) {
+			wp_send_json_error( [ 'message' => esc_html__( 'Invalid action', 'bricks' ) ] );
+		}
+
+		// Get post
+		$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : 0;
+
+		// Duplicate post/page core function
+		$new_post_id = self::duplicate_content( $post_id );
+
+		if ( ! $new_post_id ) {
+			wp_send_json_error( [ 'message' => esc_html__( 'Post could not be duplicated', 'bricks' ) ] );
+		}
+
+		wp_safe_redirect( wp_get_referer() );
+	}
+
+	/**
+	 * Duplicate page or post incl. taxnomy terms (Bricks or WordPress)
+	 *
+	 * Handles Bricks data ID duplication as well.
+	 *
+	 * @param int $post_id
+	 * @return int|bool
+	 * @since 1.9.8
+	 */
+	public static function duplicate_content( $post_id = 0 ) {
+		$post = $post_id ? get_post( $post_id ) : null;
+
+		if ( ! $post ) {
+			return false;
+		}
+
+		// STEP: Insert new post
+		$new_post_id = wp_insert_post(
+			[
+				'post_author'    => get_current_user_id(),
+				'post_status'    => 'draft',
+				'post_title'     => $post->post_title . ' (' . esc_html__( 'Copy', 'bricks' ) . ')',
+				'post_content'   => $post->post_content,
+				'post_excerpt'   => $post->post_excerpt,
+				// 'post_name'      => $post->post_name, // Don't copy the slug or original post will take the wrong info
+				'post_parent'    => $post->post_parent,
+				'post_password'  => $post->post_password,
+				'post_type'      => $post->post_type,
+				'to_ping'        => $post->to_ping,
+				'ping_status'    => $post->ping_status,
+				'comment_status' => $post->comment_status,
+				'menu_order'     => $post->menu_order,
+			]
+		);
+
+		// STEP: Set post taxonomy terms
+		$taxonomies = get_object_taxonomies( $post->post_type );
+
+		foreach ( $taxonomies as $taxonomy ) {
+			$post_terms = wp_get_object_terms( $post_id, $taxonomy, [ 'fields' => 'slugs' ] );
+
+			if ( ! empty( $post_terms ) ) {
+				wp_set_object_terms( $new_post_id, $post_terms, $taxonomy );
+			}
+		}
+
+		// STEP: Handle non-bricks post meta, do not copy _edit_lock or new cloned post will show as being edited
+		global $wpdb;
+
+		$meta_infos = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT meta_key, meta_value FROM $wpdb->postmeta
+				WHERE post_id = %d AND meta_key NOT IN (%s, %s, %s, %s)",
+				$post_id,
+				BRICKS_DB_PAGE_HEADER,
+				BRICKS_DB_PAGE_CONTENT,
+				BRICKS_DB_PAGE_FOOTER,
+				'_edit_lock',
+			)
+		);
+
+		if ( count( $meta_infos ) != 0 ) {
+			$sql_query        = "INSERT INTO $wpdb->postmeta (post_id, meta_key, meta_value) VALUES ";
+			$sql_query_params = [];
+
+			foreach ( $meta_infos as $meta_info ) {
+				$meta_key           = $meta_info->meta_key;
+				$meta_value         = addslashes( $meta_info->meta_value );
+				$sql_query         .= '(%d, %s, %s),';
+				$sql_query_params[] = $new_post_id;
+				$sql_query_params[] = $meta_key;
+				$sql_query_params[] = $meta_value;
+			}
+
+			$sql_query = rtrim( $sql_query, ',' );
+			$wpdb->query( $wpdb->prepare( $sql_query, $sql_query_params ) );
+		}
+
+		// STEP: Handle Bricks data
+		$area = 'content';
+
+		// Set the content type (header, footer, content, section, popup, etc)
+		if ( $post->post_type === 'bricks_template' ) {
+			$area = Templates::get_template_type( $post_id );
+		}
+
+		// Get the Bricks data
+		$bricks_data = Database::get_data( $post_id, $area );
+
+		if ( is_array( $bricks_data ) ) {
+			$bricks_meta_key = Database::get_bricks_data_key( $area );
+
+			// STEP: Generate new & unique IDs for Bricks elements
+			$new_bricks_data = Helpers::generate_new_element_ids( $bricks_data );
+
+			// STEP: wp_slash the new Bricks data before updating the postmeta
+			$new_bricks_data = wp_slash( $new_bricks_data );
+
+			// STEP: Update the Bricks data postmeta
+			update_post_meta( $new_post_id, $bricks_meta_key, $new_bricks_data );
+		}
+
+		return $new_post_id;
 	}
 }
