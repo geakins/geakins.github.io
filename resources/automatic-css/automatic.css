@@ -1,4 +1,4 @@
-/* File: automatic.css - Version: 2.8.3 - Generated: 2024-05-30 16:24:08 */
+/* File: automatic.css - Version: 2.8.3 - Generated: 2024-05-30 23:30:53 */
 :root, .color-scheme--main {
   --action-hex: #003f52;
   --action-hsl: 194 100% 16%;
@@ -591,12 +591,12 @@
   --width-full: 100%;
   --content-width: var(--width-content);
   --content-width-safe: min(var(--width-content), calc(100% - var(--section-padding-x) * 2));
-  --radius-xs: 0.8888888889rem;
-  --radius-s: 1.3333333333rem;
-  --radius-m: 2rem;
-  --radius-l: 3rem;
-  --radius-xl: 4.5rem;
-  --radius-xxl: 6.75rem;
+  --radius-xs: 1.3333333333rem;
+  --radius-s: 2rem;
+  --radius-m: 3rem;
+  --radius-l: 4.5rem;
+  --radius-xl: 6.75rem;
+  --radius-xxl: 10.125rem;
   --radius-50: 50%;
   --radius-circle: 50%;
   --grid-1: repeat(1, minmax(0, 1fr));
