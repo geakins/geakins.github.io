@@ -1,4 +1,4 @@
-/* File: automatic.css - Version: 2.8.3 - Generated: 2024-05-31 13:48:00 */
+/* File: automatic.css - Version: 2.8.3 - Generated: 2024-05-31 16:31:43 */
 :root, .color-scheme--main {
   --action-hex: #003f52;
   --action-hsl: 194 100% 16%;
@@ -711,13 +711,13 @@
   --btn-border-width: 0.25rem;
   --btn-outline-border-width: 0.25rem;
   --btn-border-style: solid;
-  --btn-border-radius: 5;
+  --btn-border-radius: 1em;
   --btn-transition-duration: 0.3s;
 }
 /* Deprecated in ACSS 2.7 */
 :root {
   --btn-border-size: 0.25rem;
-  --btn-radius: 5;
+  --btn-radius: 1em;
   --outline-btn-border-size: 0.25rem;
   --btn-pad-x: 1.5em;
   --btn-pad-y: 0.75em;
