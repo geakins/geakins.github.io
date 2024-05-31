@@ -1,4 +1,4 @@
-/* File: automatic-frames.css - Version: 2.8.3 - Generated: 2024-05-30 23:30:54 */
+/* File: automatic-frames.css - Version: 2.8.3 - Generated: 2024-05-31 13:48:01 */
 :root {
   --fr-bg-light: var(--bg-light);
   --fr-bg-dark: var(--bg-dark);
@@ -9,12 +9,12 @@
   --fr-card-border-size: 0.15rem;
   --fr-card-border-color: var(--neutral-light);
   --fr-card-border-style: solid;
-  --fr-card-radius: var(--radius-xs);
+  --fr-card-radius: var(--radius-m);
   --fr-card-avatar-radius: 50%;
   --fr-lede-width: 60ch;
   --fr-list-pad-y: 0.75em;
   --fr-list-pad-x: 1.25em;
-  --fr-hero-padding: var(--section-space-xl);
+  --fr-hero-padding: var(--section-space-l);
 }
 .fr-lede, p.fr-lede {
   max-width: 60ch;
