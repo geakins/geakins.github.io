@@ -1,4 +1,4 @@
-/* File: automatic-bricks.css - Version: 2.8.3 - Generated: 2024-05-31 16:31:44 */
+/* File: automatic-bricks.css - Version: 2.8.3 - Generated: 2024-06-05 19:27:26 */
 body.bricks-is-frontend :focus-visible {
   outline-style: solid;
   outline-color: var(--focus-color);
@@ -595,7 +595,7 @@ body:where(.bricks-is-frontend), body:where(:not(.bricks-is-frontend)) {
 .btn--primary {
   --btn-background: var(--primary);
   --btn-background-hover: var(--primary-hover);
-  --btn-text-color: var(--primary-ultra-light);
+  --btn-text-color: var(--primary-dark);
   --btn-text-color-hover: var(--primary-ultra-light);
   --btn-border-color: var(--primary);
   --btn-border-color-hover: var(--primary-hover);
