@@ -1,4 +1,4 @@
-/* File: automatic-bricks.css - Version: 3.0.2 - Generated: 2024-07-01 14:33:07 */
+/* File: automatic-bricks.css - Version: 3.0.4 - Generated: 2024-07-17 19:21:10 */
 body.bricks-is-frontend.bricks-is-frontend :focus {
   outline: none;
   box-shadow: none;
@@ -514,6 +514,7 @@ body.bricks-is-frontend.bricks-is-frontend .focus--black *:focus, body.bricks-is
   inset-block-start: 1rem;
   inset-inline-start: 1rem;
   transform: translateY(-250%);
+  --btn-min-width: fit-content;
   background: var(--btn-background);
   color: var(--btn-text-color);
   padding-block: var(--btn-padding-block);
@@ -533,9 +534,13 @@ body.bricks-is-frontend.bricks-is-frontend .focus--black *:focus, body.bricks-is
   transition: var(--btn-transition, var(--transition));
   justify-content: var(--btn-justify-content, center);
   text-align: var(--btn-text-align, center);
-  background: var(--action);
-  color: var(--action-ultra-light);
-  display: inline-flex;
+  --btn-background: var(--primary);
+  --btn-background-hover: var(--primary-hover);
+  --btn-text-color: var(--primary-dark);
+  --btn-text-color-hover: var(--primary-ultra-light);
+  --btn-border-color: var(--primary);
+  --btn-border-color-hover: var(--primary-hover);
+  --focus-color: var(--primary-dark);
 }
 @media (hover: hover) and (pointer: fine) {
   .skip-link:hover, .link--skip:hover {
@@ -553,10 +558,6 @@ body.bricks-is-frontend.bricks-is-frontend .focus--black *:focus, body.bricks-is
 }
 .skip-link:focus, .link--skip:focus {
   transform: translateY(0);
-}
-.skip-link:hover, .link--skip:hover {
-  background-color: var(--action-hover);
-  color: var(--action-ultra-light);
 }
 .bricks-area .hidden-accessible {
   position: relative !important;
@@ -626,7 +627,7 @@ body {
   text-wrap: var(--text-text-wrap);
 }
 p, li {
-  line-height: var(--text-line-height, 1.5);
+  line-height: var(--text-line-height, calc());
 }
 :is(h1, h2, h3, h4, h5, h6) {
   line-height: var(--heading-line-height);

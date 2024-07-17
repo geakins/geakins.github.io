@@ -1,4 +1,4 @@
-/* File: automatic-variables.css - Version: 3.0.2 - Generated: 2024-07-01 14:33:06 */
+/* File: automatic-variables.css - Version: 3.0.4 - Generated: 2024-07-17 19:21:09 */
 :root, .color-scheme--main {
   --action-hex: #003f52;
   --action-hsl: 194 100% 16%;
@@ -1080,21 +1080,21 @@
   --text-xxl-line-height: 1.5;
   --text-xl-line-height: 1.5;
   --text-l-line-height: 1.5;
-  --text-m-line-height: calc(1.5);
+  --text-m-line-height: calc();
   --text-s-line-height: 1.5;
   --text-xs-line-height: 1.5;
-  --base-text-lh: 1.5;
-  --heading-line-height: 1.2;
+  --base-text-lh: calc();
+  --heading-line-height: calc();
   --heading-text-wrap: pretty;
-  --base-heading-lh: 1.2;
+  --base-heading-lh: calc();
   --h1-line-height: 1.2;
   --h2-line-height: 1.2;
   --h3-line-height: 1.2;
-  --h4-line-height: 1.2;
+  --h4-line-height: calc();
   --h5-line-height: 1.2;
   --h6-line-height: 1.2;
   --text-color: var(--black);
-  --text-line-height: 1.5;
+  --text-line-height: calc();
   --text-text-wrap: pretty;
 }
 :root {

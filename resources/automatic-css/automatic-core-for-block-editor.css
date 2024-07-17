@@ -1,4 +1,4 @@
-/* File: automatic-core-for-block-editor.css - Version: 3.0.2 - Generated: 2024-07-01 14:33:08 */
+/* File: automatic-core-for-block-editor.css - Version: 3.0.4 - Generated: 2024-07-17 19:21:11 */
 .hidden-accessible {
   position: relative !important;
   inline-size: 2ch !important;
@@ -1111,21 +1111,21 @@
   --text-xxl-line-height: 1.5;
   --text-xl-line-height: 1.5;
   --text-l-line-height: 1.5;
-  --text-m-line-height: calc(1.5);
+  --text-m-line-height: calc();
   --text-s-line-height: 1.5;
   --text-xs-line-height: 1.5;
-  --base-text-lh: 1.5;
-  --heading-line-height: 1.2;
+  --base-text-lh: calc();
+  --heading-line-height: calc();
   --heading-text-wrap: pretty;
-  --base-heading-lh: 1.2;
+  --base-heading-lh: calc();
   --h1-line-height: 1.2;
   --h2-line-height: 1.2;
   --h3-line-height: 1.2;
-  --h4-line-height: 1.2;
+  --h4-line-height: calc();
   --h5-line-height: 1.2;
   --h6-line-height: 1.2;
   --text-color: var(--black);
-  --text-line-height: 1.5;
+  --text-line-height: calc();
   --text-text-wrap: pretty;
 }
 :root {
@@ -1255,10 +1255,6 @@ input, button, textarea, select {
 :where(dd) {
   margin-inline-start: 0;
 }
-img {
-  object-fit: var(--object-fit, cover);
-  object-position: var(--object-position, 50% 50%);
-}
 .focus-parent:focus-within {
   outline: var(--focus-width) solid var(--focus-color);
   outline-offset: var(--focus-offset);
@@ -1320,62 +1316,62 @@ body:where(:not(.block-editor-writing-flow, .editor-styles-wrapper)) :where(p, h
 .smart-spacing-normalize :where(p, h1, h2, h3, h4, h5, h6, ul, ol, li) {
   margin-block: 0;
 }
-.smart-spacing-preview > * + *, .smart-spacing > * + * {
+.smart-spacing-preview > * + *, .smart-spacing.smart-spacing > * + * {
   margin-block-start: var(--flow-spacing, initial);
   margin-block-end: 0;
 }
-.smart-spacing-preview > * + :where(h1, h2, h3, h4, h5, h6), .smart-spacing > * + :where(h1, h2, h3, h4, h5, h6) {
+.smart-spacing-preview > * + :where(h1, h2, h3, h4, h5, h6), .smart-spacing.smart-spacing > * + :where(h1, h2, h3, h4, h5, h6) {
   margin-block-start: var(--heading-spacing, var(--flow-spacing, initial));
   margin-block-end: 0;
 }
-.smart-spacing-preview > :where(* + h2), .smart-spacing > :where(* + h2) {
+.smart-spacing-preview > :where(* + h2), .smart-spacing.smart-spacing > :where(* + h2) {
   margin-block-start: var(--h2-spacing, var(--heading-spacing));
   margin-block-end: 0;
 }
-.smart-spacing-preview > :where(* + h3), .smart-spacing > :where(* + h3) {
+.smart-spacing-preview > :where(* + h3), .smart-spacing.smart-spacing > :where(* + h3) {
   margin-block-start: var(--h3-spacing, var(--heading-spacing));
   margin-block-end: 0;
 }
-.smart-spacing-preview > :where(* + h4), .smart-spacing > :where(* + h4) {
+.smart-spacing-preview > :where(* + h4), .smart-spacing.smart-spacing > :where(* + h4) {
   margin-block-start: var(--h4-spacing, var(--heading-spacing));
   margin-block-end: 0;
 }
-.smart-spacing-preview > :where(* + h5), .smart-spacing > :where(* + h5) {
+.smart-spacing-preview > :where(* + h5), .smart-spacing.smart-spacing > :where(* + h5) {
   margin-block-start: var(--h5-spacing, var(--heading-spacing));
   margin-block-end: 0;
 }
-.smart-spacing-preview > :where(* + h6), .smart-spacing > :where(* + h6) {
+.smart-spacing-preview > :where(* + h6), .smart-spacing.smart-spacing > :where(* + h6) {
   margin-block-start: var(--h6-spacing, var(--heading-spacing));
   margin-block-end: 0;
 }
-.smart-spacing-preview > * + p, .smart-spacing > * + p {
+.smart-spacing-preview > * + p, .smart-spacing.smart-spacing > * + p {
   margin-block-start: var(--paragraph-spacing, var(--flow-spacing, initial));
   margin-block-end: 0;
 }
-.smart-spacing-preview > :is(* + ul, * + ol), .smart-spacing > :is(* + ul, * + ol) {
+.smart-spacing-preview > :is(* + ul, * + ol), .smart-spacing.smart-spacing > :is(* + ul, * + ol) {
   margin-block: var(--list-spacing, var(--flow-spacing, initial));
 }
-.smart-spacing-preview > :is(ul, ol), .smart-spacing > :is(ul, ol) {
+.smart-spacing-preview > :is(ul, ol), .smart-spacing.smart-spacing > :is(ul, ol) {
   padding-inline-start: var(--list-indent-spacing, var(--flow-spacing, initial));
 }
-.smart-spacing-preview > ul * + li, .smart-spacing > ul * + li {
+.smart-spacing-preview > ul * + li, .smart-spacing-preview > ol * + li, .smart-spacing.smart-spacing > ul * + li, .smart-spacing.smart-spacing > ol * + li {
   margin-block-start: var(--list-item-spacing, var(--flow-spacing, initial));
   margin-block-end: 0;
 }
-.smart-spacing-preview > ul ul, .smart-spacing > ul ul {
+.smart-spacing-preview > ul ul, .smart-spacing-preview > ol ol, .smart-spacing-preview > ul ol, .smart-spacing-preview > ol ul, .smart-spacing.smart-spacing > ul ul, .smart-spacing.smart-spacing > ol ol, .smart-spacing.smart-spacing > ul ol, .smart-spacing.smart-spacing > ol ul {
   margin-block: var(--nested-list-spacing, var(--list-item-spacing, initial));
   padding-inline-start: var(--nested-list-indent-spacing, initial);
 }
-.smart-spacing-preview > :is(ul, ol) :is(ul, ol) li, .smart-spacing > :is(ul, ol) :is(ul, ol) li {
+.smart-spacing-preview > :is(ul, ol) :is(ul, ol) li, .smart-spacing.smart-spacing > :is(ul, ol) :is(ul, ol) li {
   margin-block-start: var(--nested-list-item-spacing, var(--list-item-spacing, initial));
 }
-.smart-spacing-preview > * + figure, .smart-spacing > * + figure {
+.smart-spacing-preview > * + figure, .smart-spacing.smart-spacing > * + figure {
   margin-block: var(--figure-spacing, var(--flow-spacing, initial));
 }
-.smart-spacing-preview figcaption, .smart-spacing figcaption {
+.smart-spacing-preview figcaption, .smart-spacing.smart-spacing figcaption {
   margin-block: var(--figcaption-spacing, var(--flow-spacing, initial));
 }
-.smart-spacing-preview > * + blockquote:where(:not(figure > blockquote)), .smart-spacing > * + blockquote:where(:not(figure > blockquote)) {
+.smart-spacing-preview > * + blockquote:where(:not(figure > blockquote)), .smart-spacing.smart-spacing > * + blockquote:where(:not(figure > blockquote)) {
   margin-block: var(--blockquote-spacing, var(--flow-spacing, initial));
 }
 :where(.woocommerce-checkout) p {
@@ -1419,11 +1415,11 @@ body:where(:not(.block-editor-writing-flow, .editor-styles-wrapper)) :where(p, h
 .brxe-text > :is(ul, ol), .brxe-post-content:where(:not([data-source="bricks"])) > :is(ul, ol) {
   padding-inline-start: var(--list-indent-spacing, var(--flow-spacing, initial));
 }
-.brxe-text > ul * + li, .brxe-post-content:where(:not([data-source="bricks"])) > ul * + li {
+.brxe-text > ul * + li, .brxe-text > ol * + li, .brxe-post-content:where(:not([data-source="bricks"])) > ul * + li, .brxe-post-content:where(:not([data-source="bricks"])) > ol * + li {
   margin-block-start: var(--list-item-spacing, var(--flow-spacing, initial));
   margin-block-end: 0;
 }
-.brxe-text > ul ul, .brxe-post-content:where(:not([data-source="bricks"])) > ul ul {
+.brxe-text > ul ul, .brxe-text > ol ol, .brxe-text > ul ol, .brxe-text > ol ul, .brxe-post-content:where(:not([data-source="bricks"])) > ul ul, .brxe-post-content:where(:not([data-source="bricks"])) > ol ol, .brxe-post-content:where(:not([data-source="bricks"])) > ul ol, .brxe-post-content:where(:not([data-source="bricks"])) > ol ul {
   margin-block: var(--nested-list-spacing, var(--list-item-spacing, initial));
   padding-inline-start: var(--nested-list-indent-spacing, initial);
 }
@@ -1481,11 +1477,11 @@ body :where(p:last-of-type) + :is(h1, h2, h3, h4, h5, h6) {
 :not(.woocommerce-checkout) [class*="woocommerce"] * + p > :is(ul, ol) {
   padding-inline-start: var(--list-indent-spacing, var(--flow-spacing, initial));
 }
-:not(.woocommerce-checkout) [class*="woocommerce"] * + p > ul * + li {
+:not(.woocommerce-checkout) [class*="woocommerce"] * + p > ul * + li, :not(.woocommerce-checkout) [class*="woocommerce"] * + p > ol * + li {
   margin-block-start: var(--list-item-spacing, var(--flow-spacing, initial));
   margin-block-end: 0;
 }
-:not(.woocommerce-checkout) [class*="woocommerce"] * + p > ul ul {
+:not(.woocommerce-checkout) [class*="woocommerce"] * + p > ul ul, :not(.woocommerce-checkout) [class*="woocommerce"] * + p > ol ol, :not(.woocommerce-checkout) [class*="woocommerce"] * + p > ul ol, :not(.woocommerce-checkout) [class*="woocommerce"] * + p > ol ul {
   margin-block: var(--nested-list-spacing, var(--list-item-spacing, initial));
   padding-inline-start: var(--nested-list-indent-spacing, initial);
 }
@@ -6776,6 +6772,42 @@ img.object-fit--contain, .object-fit--contain img {
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   inline-size: 100%;
 }
+.grid-rows--1 {
+  grid-template-rows: repeat(1, minmax(0, 1fr));
+}
+.grid-rows--2 {
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.grid-rows--3 {
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+.grid-rows--4 {
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+}
+.grid-rows--5 {
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+}
+.grid-rows--6 {
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+}
+.grid-rows--7 {
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+}
+.grid-rows--8 {
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+}
+.grid-rows--9 {
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+}
+.grid-rows--10 {
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+}
+.grid-rows--11 {
+  grid-template-rows: repeat(11, minmax(0, 1fr));
+}
+.grid-rows--12 {
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+}
 @media (max-width: 1280px) {
   .grid--xl-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -6815,6 +6847,42 @@ img.object-fit--contain, .object-fit--contain img {
   }
   .grid--xl-12 {
     grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .grid-rows--xl-1 {
+    grid-template-rows: repeat(1, minmax(0, 1fr));
+  }
+  .grid-rows--xl-2 {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .grid-rows--xl-3 {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+  .grid-rows--xl-4 {
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+  .grid-rows--xl-5 {
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+  }
+  .grid-rows--xl-6 {
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+  }
+  .grid-rows--xl-7 {
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+  }
+  .grid-rows--xl-8 {
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+  }
+  .grid-rows--xl-9 {
+    grid-template-rows: repeat(9, minmax(0, 1fr));
+  }
+  .grid-rows--xl-10 {
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+  }
+  .grid-rows--xl-11 {
+    grid-template-rows: repeat(11, minmax(0, 1fr));
+  }
+  .grid-rows--xl-12 {
+    grid-template-rows: repeat(12, minmax(0, 1fr));
   }
 }
 @media (max-width: 992px) {
@@ -6857,6 +6925,42 @@ img.object-fit--contain, .object-fit--contain img {
   .grid--l-12 {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
+  .grid-rows--l-1 {
+    grid-template-rows: repeat(1, minmax(0, 1fr));
+  }
+  .grid-rows--l-2 {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .grid-rows--l-3 {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+  .grid-rows--l-4 {
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+  .grid-rows--l-5 {
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+  }
+  .grid-rows--l-6 {
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+  }
+  .grid-rows--l-7 {
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+  }
+  .grid-rows--l-8 {
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+  }
+  .grid-rows--l-9 {
+    grid-template-rows: repeat(9, minmax(0, 1fr));
+  }
+  .grid-rows--l-10 {
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+  }
+  .grid-rows--l-11 {
+    grid-template-rows: repeat(11, minmax(0, 1fr));
+  }
+  .grid-rows--l-12 {
+    grid-template-rows: repeat(12, minmax(0, 1fr));
+  }
 }
 @media (max-width: 768px) {
   .grid--m-1 {
@@ -6898,6 +7002,42 @@ img.object-fit--contain, .object-fit--contain img {
   .grid--m-12 {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
+  .grid-rows--m-1 {
+    grid-template-rows: repeat(1, minmax(0, 1fr));
+  }
+  .grid-rows--m-2 {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .grid-rows--m-3 {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+  .grid-rows--m-4 {
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+  .grid-rows--m-5 {
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+  }
+  .grid-rows--m-6 {
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+  }
+  .grid-rows--m-7 {
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+  }
+  .grid-rows--m-8 {
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+  }
+  .grid-rows--m-9 {
+    grid-template-rows: repeat(9, minmax(0, 1fr));
+  }
+  .grid-rows--m-10 {
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+  }
+  .grid-rows--m-11 {
+    grid-template-rows: repeat(11, minmax(0, 1fr));
+  }
+  .grid-rows--m-12 {
+    grid-template-rows: repeat(12, minmax(0, 1fr));
+  }
 }
 @media (max-width: 480px) {
   .grid--s-1 {
@@ -6938,6 +7078,42 @@ img.object-fit--contain, .object-fit--contain img {
   }
   .grid--s-12 {
     grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .grid-rows--s-1 {
+    grid-template-rows: repeat(1, minmax(0, 1fr));
+  }
+  .grid-rows--s-2 {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .grid-rows--s-3 {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+  .grid-rows--s-4 {
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+  .grid-rows--s-5 {
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+  }
+  .grid-rows--s-6 {
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+  }
+  .grid-rows--s-7 {
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+  }
+  .grid-rows--s-8 {
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+  }
+  .grid-rows--s-9 {
+    grid-template-rows: repeat(9, minmax(0, 1fr));
+  }
+  .grid-rows--s-10 {
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+  }
+  .grid-rows--s-11 {
+    grid-template-rows: repeat(11, minmax(0, 1fr));
+  }
+  .grid-rows--s-12 {
+    grid-template-rows: repeat(12, minmax(0, 1fr));
   }
 }
 @media (max-width: 992px) {
@@ -7131,10 +7307,10 @@ img.object-fit--contain, .object-fit--contain img {
   }
 }
 .row-span--1 {
-  grid-row: span 1;
+  grid-row-end: span 1;
 }
 .col-span--1 {
-  grid-column: span 1;
+  grid-column-end: span 1;
 }
 .row-start--1 {
   grid-row-start: 1;
@@ -7149,10 +7325,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 1;
 }
 .row-span--2 {
-  grid-row: span 2;
+  grid-row-end: span 2;
 }
 .col-span--2 {
-  grid-column: span 2;
+  grid-column-end: span 2;
 }
 .row-start--2 {
   grid-row-start: 2;
@@ -7167,10 +7343,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 2;
 }
 .row-span--3 {
-  grid-row: span 3;
+  grid-row-end: span 3;
 }
 .col-span--3 {
-  grid-column: span 3;
+  grid-column-end: span 3;
 }
 .row-start--3 {
   grid-row-start: 3;
@@ -7185,10 +7361,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 3;
 }
 .row-span--4 {
-  grid-row: span 4;
+  grid-row-end: span 4;
 }
 .col-span--4 {
-  grid-column: span 4;
+  grid-column-end: span 4;
 }
 .row-start--4 {
   grid-row-start: 4;
@@ -7203,10 +7379,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 4;
 }
 .row-span--5 {
-  grid-row: span 5;
+  grid-row-end: span 5;
 }
 .col-span--5 {
-  grid-column: span 5;
+  grid-column-end: span 5;
 }
 .row-start--5 {
   grid-row-start: 5;
@@ -7221,10 +7397,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 5;
 }
 .row-span--6 {
-  grid-row: span 6;
+  grid-row-end: span 6;
 }
 .col-span--6 {
-  grid-column: span 6;
+  grid-column-end: span 6;
 }
 .row-start--6 {
   grid-row-start: 6;
@@ -7239,10 +7415,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 6;
 }
 .row-span--7 {
-  grid-row: span 7;
+  grid-row-end: span 7;
 }
 .col-span--7 {
-  grid-column: span 7;
+  grid-column-end: span 7;
 }
 .row-start--7 {
   grid-row-start: 7;
@@ -7257,10 +7433,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 7;
 }
 .row-span--8 {
-  grid-row: span 8;
+  grid-row-end: span 8;
 }
 .col-span--8 {
-  grid-column: span 8;
+  grid-column-end: span 8;
 }
 .row-start--8 {
   grid-row-start: 8;
@@ -7275,10 +7451,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 8;
 }
 .row-span--9 {
-  grid-row: span 9;
+  grid-row-end: span 9;
 }
 .col-span--9 {
-  grid-column: span 9;
+  grid-column-end: span 9;
 }
 .row-start--9 {
   grid-row-start: 9;
@@ -7293,10 +7469,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 9;
 }
 .row-span--10 {
-  grid-row: span 10;
+  grid-row-end: span 10;
 }
 .col-span--10 {
-  grid-column: span 10;
+  grid-column-end: span 10;
 }
 .row-start--10 {
   grid-row-start: 10;
@@ -7311,10 +7487,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 10;
 }
 .row-span--11 {
-  grid-row: span 11;
+  grid-row-end: span 11;
 }
 .col-span--11 {
-  grid-column: span 11;
+  grid-column-end: span 11;
 }
 .row-start--11 {
   grid-row-start: 11;
@@ -7329,10 +7505,10 @@ img.object-fit--contain, .object-fit--contain img {
   grid-column-end: 11;
 }
 .row-span--12 {
-  grid-row: span 12;
+  grid-row-end: span 12;
 }
 .col-span--12 {
-  grid-column: span 12;
+  grid-column-end: span 12;
 }
 .row-start--12 {
   grid-row-start: 12;
@@ -10265,7 +10441,7 @@ section > div:where([class*="grid--"]), :where([class*="grid--"]) {
   margin-block-start: var(--list-item-spacing);
 }
 main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_current, main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_current, main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_label > .xdsoft_select > div > .xdsoft_option.xdsoft_current, main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_label > .xdsoft_select > div > .xdsoft_option:hover, main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_calendar td:hover, main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div:hover {
-  background: var(--action) !important;
+  background: var(--primary) !important;
 }
 .form--light input[type="date"], .form--light input[type="datetime-local"], .form--light input[type="month"], .form--light input[type="password"], .form--light input[type="search"], .form--light input[type="time"], .form--light input[type="week"], .form--light input[type="email"], .form--light input[type="number"], .form--light input[type="tel"], .form--light input[type="text"], .form--light input[type="url"], .form--light select:not([multiple]):not([size]), .form--light .bricks-search-form input[type="date"], .form--light .bricks-search-form input[type="datetime-local"], .form--light .bricks-search-form input[type="month"], .form--light .bricks-search-form input[type="password"], .form--light .bricks-search-form input[type="search"], .form--light .bricks-search-form input[type="time"], .form--light .bricks-search-form input[type="week"], .form--light .bricks-search-form input[type="email"], .form--light .bricks-search-form input[type="number"], .form--light .bricks-search-form input[type="tel"], .form--light .bricks-search-form input[type="text"], .form--light .bricks-search-form input[type="url"], .form--light .bricks-search-form select:not([multiple]):not([size]), .form--light .brxe-post-comments input[type="date"], .form--light .brxe-post-comments input[type="datetime-local"], .form--light .brxe-post-comments input[type="month"], .form--light .brxe-post-comments input[type="password"], .form--light .brxe-post-comments input[type="search"], .form--light .brxe-post-comments input[type="time"], .form--light .brxe-post-comments input[type="week"], .form--light .brxe-post-comments input[type="email"], .form--light .brxe-post-comments input[type="number"], .form--light .brxe-post-comments input[type="tel"], .form--light .brxe-post-comments input[type="text"], .form--light .brxe-post-comments input[type="url"], .form--light .brxe-post-comments select:not([multiple]):not([size]) {
   height: var(--f-input-height, 5rem);
@@ -10471,7 +10647,7 @@ main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_curren
   margin-block-start: var(--list-item-spacing);
 }
 main:has(.form--light) ~ .xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_current, main:has(.form--light) ~ .xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_current, main:has(.form--light) ~ .xdsoft_datetimepicker .xdsoft_label > .xdsoft_select > div > .xdsoft_option.xdsoft_current, main:has(.form--light) ~ .xdsoft_datetimepicker .xdsoft_label > .xdsoft_select > div > .xdsoft_option:hover, main:has(.form--light) ~ .xdsoft_datetimepicker .xdsoft_calendar td:hover, main:has(.form--light) ~ .xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div:hover {
-  background: var(--action) !important;
+  background: var(--primary) !important;
 }
 #shadow-host-companion {
   padding: 0;
@@ -12232,7 +12408,7 @@ body {
 }
 body p {
   font-size: var(--text-m);
-  line-height: var(--text-m-lh, 1.5);
+  line-height: var(--text-m-lh, calc());
   width: 100%;
 }
 ul, ol {
