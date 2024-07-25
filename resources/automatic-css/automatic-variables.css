@@ -1,4 +1,4 @@
-/* File: automatic-variables.css - Version: 3.0.5 - Generated: 2024-07-23 13:10:13 */
+/* File: automatic-variables.css - Version: 3.0.6 - Generated: 2024-07-24 22:35:38 */
 :root, .color-scheme--main {
   --action-hex: #003f52;
   --action-hsl: 194 100% 16%;
@@ -1170,6 +1170,9 @@
 }
 :root {
   --radius: 3rem;
+  --radius-50: 50%;
+  --radius-circle: 50vw;
+  --radius-none: 0;
   --radius-xs: 1.3333333333rem;
   --radius-s: 2rem;
   --radius-m: 3rem;

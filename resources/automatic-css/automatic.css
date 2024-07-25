@@ -1,4 +1,4 @@
-/* File: automatic.css - Version: 3.0.5 - Generated: 2024-07-23 13:10:12 */
+/* File: automatic.css - Version: 3.0.6 - Generated: 2024-07-24 22:35:37 */
 :root, .color-scheme--main {
   --action-hex: #003f52;
   --action-hsl: 194 100% 16%;
@@ -1170,6 +1170,9 @@
 }
 :root {
   --radius: 3rem;
+  --radius-50: 50%;
+  --radius-circle: 50vw;
+  --radius-none: 0;
   --radius-xs: 1.3333333333rem;
   --radius-s: 2rem;
   --radius-m: 3rem;
@@ -1207,14 +1210,9 @@ body.boxed-layout {
   margin-block-start: var(--body-margin-top, 0) !important;
   margin-inline: auto !important;
 }
-body.boxed-layout header.sticky, body.boxed-layout #brx-header.sticky.sticky {
+body.boxed-layout header.sticky > *, body.boxed-layout #brx-header.sticky.sticky > * {
   width: var(--boxed-width);
-  max-width: 100%;
-  left: 50%;
-  translate: -50% 0%;
-}
-body.boxed-layout header.sticky.on-scroll, body.boxed-layout #brx-header.sticky.sticky.on-scroll {
-  translate: 0% 0% !important;
+  margin-inline: auto;
 }
 [id] {
   scroll-margin-top: var(--offset, 0);
@@ -1353,6 +1351,10 @@ body:where(:not(.block-editor-writing-flow, .editor-styles-wrapper)) :where(p, h
 .smart-spacing-preview > * + blockquote:where(:not(figure > blockquote)), .smart-spacing.smart-spacing > * + blockquote:where(:not(figure > blockquote)) {
   margin-block: var(--blockquote-spacing, var(--flow-spacing, initial));
 }
+.smart-spacing-preview > blockquote * + *, .smart-spacing.smart-spacing > blockquote * + * {
+  margin-block-start: var(--paragraph-spacing, var(--flow-spacing, initial));
+  margin-block-end: 0;
+}
 :where(.woocommerce-checkout) p {
   margin: 0 0 1.2em;
 }
@@ -1413,6 +1415,10 @@ body:where(:not(.block-editor-writing-flow, .editor-styles-wrapper)) :where(p, h
 }
 .brxe-text > * + blockquote:where(:not(figure > blockquote)), .brxe-post-content:where(:not([data-source="bricks"])) > * + blockquote:where(:not(figure > blockquote)) {
   margin-block: var(--blockquote-spacing, var(--flow-spacing, initial));
+}
+.brxe-text > blockquote * + *, .brxe-post-content:where(:not([data-source="bricks"])) > blockquote * + * {
+  margin-block-start: var(--paragraph-spacing, var(--flow-spacing, initial));
+  margin-block-end: 0;
 }
 body :where(p:last-of-type) + :is(h1, h2, h3, h4, h5, h6) {
   margin-top: 0;
@@ -1475,6 +1481,10 @@ body :where(p:last-of-type) + :is(h1, h2, h3, h4, h5, h6) {
 }
 :not(.woocommerce-checkout) [class*="woocommerce"] * + p > * + blockquote:where(:not(figure > blockquote)) {
   margin-block: var(--blockquote-spacing, var(--flow-spacing, initial));
+}
+:not(.woocommerce-checkout) [class*="woocommerce"] * + p > blockquote * + * {
+  margin-block-start: var(--paragraph-spacing, var(--flow-spacing, initial));
+  margin-block-end: 0;
 }
 .bg--action {
   background-color: var(--action);
@@ -8375,7 +8385,7 @@ img.object-fit--contain, .object-fit--contain img {
 [class*="grid--auto"] {
   display: grid !important;
   gap: var(--grid-gap);
-  --min: calc((var(--content-width) - ((var(--column-count) - 1) * var(--grid-gap))) / var(--column-count));
+  --min: calc((var(--content-width) - ((var(--column-count) - 1) * var(--grid-gap))) / var(--column-count)) * 0.7;
   --column-count: 1;
   --min-formula: min(100%, max(var(--min), (100% - (var(--column-count) - 1) * var(--grid-gap)) / var(--column-count)));
   --grid-template-columns: repeat(auto-fit, minmax(var(--min-formula), 1fr));
@@ -10532,7 +10542,7 @@ main:has(.form--dark) ~ .xdsoft_datetimepicker .xdsoft_calendar td.xdsoft_curren
   line-height: var(--f-label-line-height, 1);
   margin-bottom: var(--f-label-margin-bottom, 0.5em);
   text-transform: var(--f-label-text-transform, none);
-  padding: var(--f-labe-padding-y, 0), var(--f-label-padding-x, 0);
+  padding: var(--f-label-padding-y, 0), var(--f-label-padding-x, 0);
 }
 .form--light .required:after, .form--light .bricks-search-form .required:after, .form--light .brxe-post-comments .required:after {
   color: var(--f-light-required-color, var(--action));

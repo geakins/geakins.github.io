@@ -1,4 +1,4 @@
-/* File: automatic-bricks-in-builder.css - Version: 3.0.5 - Generated: 2024-07-23 13:10:15 */
+/* File: automatic-bricks-in-builder.css - Version: 3.0.6 - Generated: 2024-07-24 22:35:39 */
 #bricks-popup.templates img {
   object-fit: cover !important;
 }
@@ -13,11 +13,6 @@
 }
 #bricks-popup.templates #bricks-popup-inner {
   max-width: 100% !important;
-}
-@media (min-width: 1440px) {
-  #bricks-popup.templates .bricks-layout-item {
-    width: 25%;
-  }
 }
 [data-balloon="transparent"].color-button {
   border: 1px dashed black;
