@@ -1,0 +1,19 @@
+/* File: automatic-bricks-in-builder.css - Version: 3.0.6 - Generated: 2024-07-24 18:47:47 */
+#bricks-popup.templates img {
+  object-fit: cover !important;
+}
+#bricks-popup .bricks-layout-item-inner.has-img:hover .overlay-wrapper {
+  opacity: 0.5;
+}
+#bricks-popup.templates .bricks-layout-item-inner .button.type {
+  display: none !important;
+}
+#bricks-popup.templates .bricks-layout-item-inner .overlay-wrapper .user {
+  display: none !important;
+}
+#bricks-popup.templates #bricks-popup-inner {
+  max-width: 100% !important;
+}
+[data-balloon="transparent"].color-button {
+  border: 1px dashed black;
+}
